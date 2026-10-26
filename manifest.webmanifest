@@ -1,0 +1,17 @@
+{
+  "name": "Sax Trainer",
+  "short_name": "Sax Trainer",
+  "description": "Tirage au sort pondéré de tes morceaux, métronome et suivi des notes jusqu'à 10/10.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3EADA",
+  "theme_color": "#F3EADA",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

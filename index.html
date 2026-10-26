@@ -1,0 +1,1629 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sax Trainer</title>
+<meta name="description" content="Tirage au sort pondéré de tes morceaux de saxophone, métronome et suivi des notes.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Sax Trainer">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#F3EADA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1E1513" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<script>try{var m=(JSON.parse(localStorage.getItem('saxtrainer.v1'))||{}).meta,t=m&&m.theme;if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<style>
+/* =========================================================
+   Thème — tokens issus des maquettes (clair) + variante sombre
+   ========================================================= */
+:root{
+  color-scheme:light dark;
+  --bg:#F3EADA;--surf:#FBF6EC;--surf2:#E5D3AF;--surf3:#D4BF96;--seg-on:#FBF6EC;--sep:#DCCBA8;
+  --tx:#2A1716;--tx2:#5A4A3C;--tx3:#6E5D4C;
+  --acc:#790D16;--acc-tx:#790D16;--acc-ink:#F7EEDC;--acc-soft:rgba(121,13,22,.10);
+  --ring1:rgba(121,13,22,.12);--ring2:rgba(121,13,22,.05);--flash:#790D16;
+  --ok:#186049;--ok-tx:#186049;
+  --bar:#FBF6EC;--toast:#FBF6EC;--sheet:#FBF6EC;
+  --danger:#B3261E;--danger-fill:#B3261E;--scrim:rgba(42,23,22,.42);--shadow:0 16px 40px rgba(60,30,10,.2);
+  --r-fg:#A3231A;--r-bg:#F2CFC4;--r-solid:#C23B2E;--r-ink:#FFFFFF;
+  --o-fg:#8C4A06;--o-bg:#F5D5A8;--o-solid:#E08A2E;--o-ink:#2A1600;
+  --g-fg:#3C6B1F;--g-bg:#D6E6BE;--g-solid:#8DBB64;--g-ink:#142306;
+  --x-fg:#186049;--x-bg:#C6DFD1;--x-solid:#186049;--x-ink:#FFFFFF;
+  --safe-b:max(env(safe-area-inset-bottom),6px);
+  --tabbar-h:calc(50px + var(--safe-b));
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Helvetica,Arial,sans-serif;
+  --font-num:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1E1513;--surf:#2B201D;--surf2:#3B2D28;--surf3:#54423A;--seg-on:#5E4A41;--sep:#3E302A;
+    --tx:#F3EADA;--tx2:#CDBBA3;--tx3:#A8937E;
+    --acc:#A11B27;--acc-tx:#F2959A;--acc-ink:#F7EEDC;--acc-soft:rgba(242,149,154,.13);
+    --ring1:rgba(201,48,60,.24);--ring2:rgba(201,48,60,.10);--flash:#E3505B;
+    --ok:#3A9C78;--ok-tx:#74CFA5;
+    --bar:#241A17;--toast:#33271F;--sheet:#2B201D;
+    --danger:#FF7A6E;--danger-fill:#C7372B;--scrim:rgba(0,0,0,.55);--shadow:0 16px 40px rgba(0,0,0,.55);
+    --r-fg:#FFA394;--r-bg:#4D211B;--r-solid:#D2493B;--r-ink:#FFFFFF;
+    --o-fg:#F7B76A;--o-bg:#4A3115;--o-solid:#E08A2E;--o-ink:#2A1600;
+    --g-fg:#B7DC8F;--g-bg:#2D3E1E;--g-solid:#8DBB64;--g-ink:#142306;
+    --x-fg:#7FD6AF;--x-bg:#173D30;--x-solid:#2E8B68;--x-ink:#FFFFFF;
+  }
+}
+:root[data-theme="dark"]{color-scheme:dark;
+    --bg:#1E1513;--surf:#2B201D;--surf2:#3B2D28;--surf3:#54423A;--seg-on:#5E4A41;--sep:#3E302A;
+    --tx:#F3EADA;--tx2:#CDBBA3;--tx3:#A8937E;
+    --acc:#A11B27;--acc-tx:#F2959A;--acc-ink:#F7EEDC;--acc-soft:rgba(242,149,154,.13);
+    --ring1:rgba(201,48,60,.24);--ring2:rgba(201,48,60,.10);--flash:#E3505B;
+    --ok:#3A9C78;--ok-tx:#74CFA5;
+    --bar:#241A17;--toast:#33271F;--sheet:#2B201D;
+    --danger:#FF7A6E;--danger-fill:#C7372B;--scrim:rgba(0,0,0,.55);--shadow:0 16px 40px rgba(0,0,0,.55);
+    --r-fg:#FFA394;--r-bg:#4D211B;--r-solid:#D2493B;--r-ink:#FFFFFF;
+    --o-fg:#F7B76A;--o-bg:#4A3115;--o-solid:#E08A2E;--o-ink:#2A1600;
+    --g-fg:#B7DC8F;--g-bg:#2D3E1E;--g-solid:#8DBB64;--g-ink:#142306;
+    --x-fg:#7FD6AF;--x-bg:#173D30;--x-solid:#2E8B68;--x-ink:#FFFFFF;
+}
+:root[data-theme="light"]{color-scheme:light}
+.tone-r{--t-fg:var(--r-fg);--t-bg:var(--r-bg);--t-solid:var(--r-solid);--t-ink:var(--r-ink)}
+.tone-o{--t-fg:var(--o-fg);--t-bg:var(--o-bg);--t-solid:var(--o-solid);--t-ink:var(--o-ink)}
+.tone-g{--t-fg:var(--g-fg);--t-bg:var(--g-bg);--t-solid:var(--g-solid);--t-ink:var(--g-ink)}
+.tone-x{--t-fg:var(--x-fg);--t-bg:var(--x-bg);--t-solid:var(--x-solid);--t-ink:var(--x-ink)}
+.tone-n{--t-fg:var(--tx2);--t-bg:var(--surf2);--t-solid:var(--surf3);--t-ink:var(--tx)}
+
+/* ========== Base ========== */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:16px;line-height:1.3;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select{-webkit-user-select:text;user-select:text}
+button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer;-webkit-user-select:none;user-select:none}
+button:disabled{cursor:default}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--acc-tx);outline-offset:2px}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--acc-soft)}
+p,h1,h2,h3{margin:0}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.ic{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icf{width:24px;height:24px;flex:none;fill:currentColor;stroke:currentColor;stroke-width:1;stroke-linejoin:round}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none!important}
+
+/* ========== Vues & barre d'onglets ========== */
+.view{position:fixed;top:0;left:0;right:0;bottom:var(--tabbar-h);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+#view-play{overflow:hidden;display:flex;flex-direction:column}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;height:var(--tabbar-h);padding:4px max(8px,env(safe-area-inset-right)) var(--safe-b) max(8px,env(safe-area-inset-left));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:start;background:var(--bar);border-top:1px solid var(--sep)}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:44px;border:0;background:transparent;padding:0;color:var(--tx3);font-size:10.5px;font-weight:600}
+.tab .ic{width:27px;height:27px}
+.tab[aria-current="page"]{color:var(--acc-tx)}
+body.typing .tabbar{display:none}
+body.typing .view{bottom:0}
+
+/* ========== Composants communs ========== */
+.page{padding-bottom:36px}
+.navrow{height:44px;display:flex;align-items:center;justify-content:flex-end;gap:2px;padding:0 8px}
+.navbtn{width:44px;height:44px;border:0;padding:0;border-radius:22px;background:transparent;color:var(--acc-tx);display:inline-flex;align-items:center;justify-content:center}
+.navbtn .ic{width:26px;height:26px;stroke-width:2.2}
+.lt{padding:0 20px;font-size:34px;line-height:41px;font-weight:800;letter-spacing:-.02em}
+.sec{font-size:13px;line-height:18px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--tx2)}
+.card{background:var(--surf);border-radius:20px;overflow:hidden}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:3px;min-width:46px;height:28px;padding:0 10px;border-radius:14px;background:var(--t-bg);color:var(--t-fg);font-size:15px;font-weight:700;line-height:1;flex:none}
+.pill.lg{height:44px;min-width:84px;border-radius:22px;font-size:24px;padding:0 14px}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:54px;border:0;border-radius:18px;background:var(--acc);color:var(--acc-ink);font-size:18px;font-weight:700;text-decoration:none}
+.btn:disabled{background:var(--surf2);color:var(--tx3)}
+.btn .ic{stroke-width:2.4}
+.btn2{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 16px;border:0;border-radius:22px;background:var(--acc-soft);color:var(--acc-tx);font-size:15px;font-weight:600}
+.btn2 .ic{width:20px;height:20px}
+.lnk{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 8px;border:0;background:transparent;color:var(--acc-tx);font-size:16px;font-weight:600;white-space:nowrap}
+.lnk:disabled{color:var(--tx3);opacity:.6}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;height:44px;padding:3px;border-radius:13px;background:var(--surf2)}
+.seg button{border:0;border-radius:10px;background:transparent;font-size:15px;font-weight:600;color:var(--tx2);padding:0 4px}
+.seg button[aria-pressed="true"]{background:var(--seg-on);color:var(--tx);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;padding:56px 36px 24px;text-align:center}
+.emblem{width:96px;height:96px;border-radius:48px;background:var(--acc-soft);color:var(--acc-tx);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 14px var(--ring2)}
+.emblem .ic{width:44px;height:44px;stroke-width:2}
+.empty-t{font-size:22px;line-height:28px;font-weight:800}
+.empty-s{font-size:16px;line-height:23px;color:var(--tx2);margin-top:10px}
+.dot-sep{width:4px;height:4px;border-radius:2px;background:var(--tx3);margin:0 4px;flex:none}
+
+/* Case à cocher ronde + ligne de commentaire */
+.chk{width:44px;height:44px;flex:none;border:0;padding:0;background:transparent;display:flex;align-items:center;justify-content:center}
+.chk span{width:24px;height:24px;border-radius:12px;border:2px solid var(--tx3);display:flex;align-items:center;justify-content:center;color:var(--acc-ink);transition:background .15s,border-color .15s}
+.chk .ic{width:15px;height:15px;stroke-width:3;opacity:0}
+.is-done .chk span{background:var(--acc);border-color:var(--acc)}
+.is-done .chk .ic{opacity:1}
+.ctext-main{font-size:16px;line-height:21px;white-space:pre-wrap;overflow-wrap:anywhere}
+.is-done .ctext-main{color:var(--tx3);text-decoration:line-through}
+.ctext-meta{font-size:13px;line-height:17px;color:var(--tx3)}
+.rwrap{position:relative;overflow:hidden}
+.rwrap + .rwrap .crow{border-top:1px solid var(--sep)}
+.crow{position:relative;z-index:1;display:flex;align-items:flex-start;gap:2px;padding:4px 16px 10px 4px;background:var(--surf);transition:transform .22s ease}
+.rwrap.open .crow{transform:translateX(-96px)}
+.ctext{flex:1;min-width:0;border:0;background:transparent;text-align:left;padding:10px 0 0;display:flex;flex-direction:column;gap:3px;color:var(--tx)}
+.swdel{position:absolute;right:0;top:0;bottom:0;width:96px;border:0;padding:0;background:var(--danger-fill);color:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:13px;font-weight:700}
+.swdel .ic{width:22px;height:22px}
+
+/* ========== Jouer ========== */
+.play-head{flex:none;padding:0 10px 0 20px}
+.play-head-row{height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.prog-txt{font-size:15px;font-weight:700;color:var(--tx2)}
+.prog-txt b{color:var(--ok-tx)}
+.pbar{height:4px;margin-right:10px;border-radius:2px;background:var(--surf2);overflow:hidden}
+.pbar>div{height:100%;border-radius:2px;background:var(--ok);transition:width .4s ease}
+.relaunch{font-size:15px;color:var(--tx2)}
+.relaunch .ic{width:19px;height:19px}
+.idle-center{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(36px,8vh,64px);padding:24px}
+.draw{width:min(244px,62vw);height:min(244px,62vw);border-radius:50%;border:0;padding:0;background:var(--acc);color:var(--acc-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;font-size:25px;line-height:29px;font-weight:800;letter-spacing:-.01em;box-shadow:0 0 0 16px var(--ring1),0 0 0 34px var(--ring2);transition:transform .12s ease}
+.draw:active{transform:scale(.96)}
+.draw .ic{width:46px;height:46px;stroke-width:2.1}
+.draw span{max-width:150px}
+.idle-foot{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.hint{font-size:15px;line-height:21px;color:var(--tx2);max-width:280px;text-align:center}
+.empty-play{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:36px;padding:0 32px;text-align:center}
+.empty-play .emblem{width:112px;height:112px;border-radius:56px;box-shadow:0 0 0 16px var(--ring2)}
+.empty-play .emblem .ic{width:52px;height:52px;stroke-width:1.6}
+.empty-play h1{font-size:26px;line-height:31px;font-weight:800;letter-spacing:-.02em}
+.empty-play p{font-size:16px;line-height:23px;color:var(--tx2);margin-top:10px}
+.empty-play .btn{max-width:300px;height:56px}
+
+/* Tirage (rouleau) */
+.draw-center{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:0 20px}
+.draw-status{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--acc-tx)}
+.draw-status .ic{width:20px;height:20px}
+.reel{position:relative;width:100%;max-width:353px;height:330px;border-radius:30px;background:var(--surf);overflow:hidden;flex:none}
+.band{position:absolute;left:14px;right:14px;top:129px;height:72px;border-radius:20px;background:var(--acc-soft);box-shadow:inset 0 0 0 2px var(--acc-tx)}
+.reel-win{position:absolute;inset:0;overflow:hidden;-webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
+.reel-strip{position:absolute;left:0;right:0;top:0;will-change:transform}
+.reel-strip.moving{filter:blur(1.6px)}
+.reel-strip{transition:filter .3s ease}
+.ri{height:66px;display:flex;align-items:center;justify-content:center;padding:0 30px;color:var(--tx2)}
+.ri span{display:block;max-width:100%;font-size:36px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:transform .25s ease,color .25s ease}
+.ri.d0 span{color:var(--tx)}
+.ri.d1 span{transform:scale(.76);color:var(--tx2)}
+.ri.d2 span{transform:scale(.62);color:var(--tx3)}
+.mark{position:absolute;top:156px;width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent}
+.mark.l{left:0;border-left:11px solid var(--acc-tx)}
+.mark.r{right:0;border-right:11px solid var(--acc-tx)}
+
+/* Morceau tiré */
+.play-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:14px 16px 18px;display:flex;flex-direction:column;gap:12px}
+.play-scroll>*{flex-shrink:0}
+.song-head{padding:0 4px;display:flex;flex-direction:column;gap:8px}
+.song-title{font-size:40px;line-height:44px;font-weight:800;letter-spacing:-.025em;overflow-wrap:anywhere}
+.song-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:15px;color:var(--tx2)}
+.song-meta .tempo{font-size:21px;font-weight:700;color:var(--tx)}
+.metro{padding:12px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .06s linear}
+.metro.flash{box-shadow:inset 0 0 0 2px var(--flash),0 0 28px var(--acc-soft)}
+.metro-top{display:flex;align-items:center;gap:14px}
+.play{width:68px;height:68px;border-radius:34px;border:0;padding:0;background:var(--acc);color:var(--acc-ink);display:flex;align-items:center;justify-content:center;flex:none}
+.play .icf{width:30px;height:30px}
+.bpm{flex:1;display:flex;align-items:baseline;gap:6px;min-width:0}
+.bpm-val{font-size:50px;line-height:54px;font-weight:700;letter-spacing:-.02em}
+.bpm-unit{font-size:14px;font-weight:600;color:var(--tx2)}
+.beats{display:flex;align-items:center;gap:9px;padding-right:4px}
+.beat{width:13px;height:13px;border-radius:7px;background:var(--surf3);transition:background .06s,box-shadow .06s}
+.beat.first{width:17px;height:17px;border-radius:9px}
+.beat.on{background:var(--flash);box-shadow:0 0 0 4px var(--acc-soft),0 0 18px var(--flash)}
+.metro-ctrl{display:flex;align-items:center;gap:6px}
+.step{width:48px;height:44px;border:0;border-radius:12px;background:var(--surf2);color:var(--tx);font-size:16px;font-weight:700;flex:none;padding:0;touch-action:manipulation}
+.step:active,.bigstep:active{filter:brightness(.92)}
+.rng{flex:1;min-width:0;height:44px;margin:0;accent-color:var(--acc)}
+.metro-mod{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--sep);margin:0 -2px -8px}
+.metro-mod .lnk{font-size:14px}
+.metro-mod .lnk .ic{width:17px;height:17px}
+.todo-sec{padding:0 4px;display:flex;flex-direction:column}
+.todo-sec .sec{margin-bottom:2px}
+.todo-row{display:flex;align-items:center;gap:2px;margin-left:-10px;min-height:44px}
+.todo-row .ctext-main{flex:1}
+.field{display:block;width:100%;min-height:66px;resize:none;border:0;border-radius:16px;background:var(--surf);color:var(--tx);font:inherit;font-size:16px;line-height:21px;padding:11px 14px}
+.field::placeholder,.inp::placeholder{color:var(--tx3)}
+.dock{flex:none;padding:10px 16px 12px;background:var(--bg);border-top:1px solid var(--sep);display:flex;flex-direction:column;gap:8px}
+body.typing .dock{display:none}
+.dock-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.dock-head span{font-size:12px;color:var(--tx3);text-align:right}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.gbtn{height:48px;border:0;border-radius:14px;padding:0;background:var(--t-bg);color:var(--t-fg);font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;transition:background .12s,box-shadow .12s}
+.gbtn.ten{grid-column:span 2}
+.gbtn[aria-checked="true"]{background:var(--t-solid);color:var(--t-ink);box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--t-solid)}
+.gbtn .icf{width:17px;height:17px}
+
+/* Toast & célébration */
+.toast{position:fixed;left:16px;right:16px;bottom:calc(var(--tabbar-h) + 16px);z-index:45;display:flex;align-items:center;gap:14px;padding:14px 18px 14px 14px;border-radius:24px;background:var(--toast);box-shadow:var(--shadow);opacity:0;transform:translateY(16px);transition:opacity .22s ease,transform .22s ease;pointer-events:none;max-width:480px;margin:0 auto}
+.toast.show{opacity:1;transform:none}
+.toast.ring{box-shadow:var(--shadow),inset 0 0 0 2px var(--x-solid)}
+.tok{width:48px;height:48px;border-radius:24px;flex:none;background:var(--t-solid);color:var(--t-ink);display:flex;align-items:center;justify-content:center}
+.tok .ic{width:26px;height:26px;stroke-width:2.8}
+.tok .icf{width:26px;height:26px}
+.toast-t{font-size:22px;line-height:26px;font-weight:800}
+.toast-s{font-size:15px;line-height:20px;color:var(--tx2);margin-top:2px}
+.cele-ov{position:fixed;inset:0;z-index:70;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:24px 28px;opacity:0;transition:opacity .25s ease}
+.cele-ov.show{opacity:1}
+.cele{position:relative;width:100%;max-width:340px;padding:34px 24px 28px;border-radius:32px;background:var(--surf);box-shadow:var(--shadow),inset 0 0 0 2px var(--x-solid);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;transform:scale(.9);transition:transform .35s cubic-bezier(.2,.9,.3,1.25)}
+.cele-ov.show .cele{transform:none}
+.medal{width:88px;height:88px;border-radius:44px;background:var(--x-solid);color:var(--x-ink);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px var(--x-bg)}
+.medal .icf{width:44px;height:44px}
+.spark{position:absolute;color:var(--x-solid)}
+.cele-big{margin-top:14px;font-size:64px;line-height:64px;font-weight:800;letter-spacing:-.03em;color:var(--x-fg)}
+.cele-name{font-size:21px;line-height:26px;font-weight:700;overflow-wrap:anywhere}
+.cele-foot{width:100%;margin-top:14px;padding-top:16px;border-top:1px solid var(--sep);display:flex;flex-direction:column;gap:8px}
+.cele-foot .pbar{height:6px;margin:0;border-radius:3px}
+.cele-foot .pbar>div{background:var(--x-solid)}
+
+/* ========== Commentaires ========== */
+.pad{padding:12px 16px 0}
+.cgroups{padding:22px 16px 0;display:flex;flex-direction:column;gap:22px}
+.cgroup{display:flex;flex-direction:column;gap:8px}
+.cg-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 6px}
+.cg-head h2{font-size:18px;line-height:22px;font-weight:700;overflow-wrap:anywhere}
+.cg-head span{font-size:13px;color:var(--tx3);white-space:nowrap}
+
+/* ========== Bibliothèque ========== */
+.search{display:flex;align-items:center;gap:8px;height:40px;padding:0 10px;border-radius:12px;background:var(--surf2);color:var(--tx3)}
+.search .ic{width:20px;height:20px}
+.search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:17px;color:var(--tx);outline:0;padding:0;-webkit-appearance:none;appearance:none}
+.search input::placeholder{color:var(--tx3)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none}
+.lib-body{padding:18px 16px 0;display:flex;flex-direction:column;gap:28px}
+.srow{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 10px 8px 16px;border:0;background:transparent;color:var(--tx);text-align:left}
+.srow + .srow{border-top:1px solid var(--sep)}
+.srow-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.srow-name{font-size:17px;line-height:22px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow-sub{font-size:14px;line-height:18px;color:var(--tx2)}
+.chev{width:18px;height:18px;color:var(--tx3)}
+.list-empty{padding:22px 18px;font-size:15px;line-height:21px;color:var(--tx2);text-align:center}
+.drow{display:flex;align-items:center;gap:12px;width:100%;height:54px;padding:0 12px;border:0;background:transparent;color:var(--tx);font-size:17px;text-align:left}
+.drow + .drow{border-top:1px solid var(--sep)}
+.dic{width:32px;height:32px;border-radius:9px;background:var(--acc-soft);color:var(--acc-tx);display:flex;align-items:center;justify-content:center;flex:none}
+.dic .ic{width:19px;height:19px;stroke-width:2}
+.data-note{padding:0 6px;font-size:14px;line-height:19px;color:var(--tx3)}
+.data-warn{padding:0 6px;display:flex;align-items:center;gap:6px;font-size:14px;line-height:19px;font-weight:600;color:var(--o-fg)}
+.data-warn .ic{width:17px;height:17px;stroke-width:2}
+
+/* Fiche */
+.fnav{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 4px}
+.fnav .lnk{font-size:17px;font-weight:500;gap:4px}
+.fnav .lnk .ic{stroke-width:2.4}
+.fiche{padding:4px 16px 0;display:flex;flex-direction:column;gap:16px}
+.f-title{font-size:36px;line-height:42px;font-weight:800;letter-spacing:-.025em;overflow-wrap:anywhere}
+.f-tempo{font-size:20px;font-weight:700;color:var(--tx2)}
+.f-stats{padding:16px;display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:end}
+.f-stat{display:flex;flex-direction:column;gap:6px;padding-bottom:6px}
+.f-stat:first-child{gap:8px;padding-bottom:0}
+.f-lab{font-size:13px;font-weight:600;color:var(--tx2)}
+.f-val{font-size:24px;line-height:26px;font-weight:800}
+.f-last{margin:-6px 4px 0;font-size:14px;color:var(--tx3)}
+.fsec{display:flex;flex-direction:column;gap:8px}
+.fsec-h{display:flex;justify-content:space-between;align-items:baseline;padding:0 6px}
+.fsec-h span{font-size:13px;color:var(--tx3)}
+.chart{display:block;width:100%;height:auto}
+.cgrid{stroke:var(--sep);stroke-width:1}
+.cgoal{stroke:var(--x-solid);stroke-width:1.5;stroke-dasharray:4 4}
+.cline{fill:none;stroke:var(--tx3);stroke-width:2;stroke-linejoin:round}
+.cdot{fill:var(--t-solid);stroke:var(--surf);stroke-width:2.5}
+.ctx{fill:var(--tx3);font-size:11px;font-weight:600;font-family:var(--font)}
+.hrow{display:grid;grid-template-columns:minmax(0,1fr) auto 84px;align-items:center;gap:12px;height:50px;padding:0 16px}
+.hrow + .hrow{border-top:1px solid var(--sep)}
+.arow{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:0 16px;border:0;background:transparent;color:var(--tx);font-size:17px;text-align:left}
+.arow.sep{border-top:1px solid var(--sep)}
+.arow.accent{color:var(--acc-tx);font-weight:600;font-size:16px}
+.arow.center{justify-content:center}
+.arow.danger{color:var(--danger);font-weight:600;justify-content:center}
+.fcom .rwrap .crow{padding-bottom:6px}
+
+/* ========== Stats ========== */
+.stats{padding:12px 16px 0;display:flex;flex-direction:column;gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.kpi{padding:16px;display:flex;flex-direction:column;gap:10px}
+.kpi-big{display:flex;align-items:baseline;gap:4px}
+.kpi-big b{font-size:44px;line-height:48px;font-weight:800;letter-spacing:-.02em}
+.kpi-big span{font-size:17px;font-weight:700;color:var(--tx2)}
+.kpi-sub{font-size:13px;color:var(--tx3)}
+.ring-bg{fill:none;stroke:var(--surf3);stroke-width:7}
+.ring-fg{fill:none;stroke:var(--ok);stroke-width:7;stroke-linecap:round}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:end;height:48px}
+.bar7{width:100%;border-radius:5px;background:var(--acc)}
+.bar7.zero{background:var(--surf3)}
+.week-l{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-top:-6px}
+.week-l span{text-align:center;font-size:12px;font-weight:600;color:var(--tx3)}
+.strow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:8px 14px 8px 16px;border:0;background:transparent;color:var(--tx);text-align:left}
+.strow + .strow{border-top:1px solid var(--sep)}
+.spk{fill:none;stroke:var(--tx3);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.spkdot{fill:var(--t-solid)}
+
+/* ========== Feuilles modales ========== */
+.ov{position:fixed;inset:0;z-index:50}
+.scrim{position:absolute;inset:0;background:var(--scrim);opacity:0;transition:opacity .25s ease}
+.ov.show .scrim{opacity:1}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top) + 12px);border-radius:14px 14px 0 0;background:var(--bg);padding:0 16px calc(var(--safe-b) + 16px);overflow-y:auto;transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);max-width:640px;margin:0 auto}
+.ov.show .sheet{transform:none}
+.grabber{width:38px;height:5px;border-radius:3px;background:var(--tx3);opacity:.5;margin:7px auto 0}
+.sheet-head{height:50px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px}
+.sheet-head h1{font-size:17px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sheet-head .lnk{font-size:17px;font-weight:500;padding:0 4px}
+.sheet-head .lnk.strong{font-weight:700;justify-self:end}
+.sheet-body{display:flex;flex-direction:column;gap:30px;padding-top:22px}
+.fld{display:flex;flex-direction:column;gap:8px}
+.fld>.sec{padding:0 6px}
+.inp{display:block;width:100%;height:54px;border:0;border-radius:16px;background:var(--surf);color:var(--tx);font:inherit;font-size:19px;font-weight:600;padding:0 16px;-webkit-appearance:none;appearance:none}
+select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--tx2) 50%),linear-gradient(135deg,var(--tx2) 50%,transparent 50%);background-position:calc(100% - 22px) 50%,calc(100% - 16px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:40px}
+.field.tall{min-height:140px}
+.warn{display:flex;align-items:center;gap:6px;padding:0 6px;font-size:14px;font-weight:600;color:var(--o-fg)}
+.warn .ic{width:17px;height:17px;stroke-width:2}
+.help{padding:0 6px;font-size:13px;color:var(--tx3)}
+.tempo-card{background:var(--surf);border-radius:22px;padding:22px 18px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bigstep{width:72px;height:72px;border-radius:36px;border:0;padding:0;background:var(--acc-soft);color:var(--acc-tx);display:flex;align-items:center;justify-content:center;flex:none;touch-action:manipulation}
+.bigstep .ic{width:32px;height:32px;stroke-width:2.6}
+.tempo-mid{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tempo-inp{width:100%;max-width:160px;border:0;background:transparent;color:var(--tx);text-align:center;font-size:64px;line-height:66px;font-weight:700;letter-spacing:-.03em;padding:0;-moz-appearance:textfield;appearance:textfield}
+.tempo-inp::-webkit-outer-spin-button,.tempo-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.tempo-mid span{font-size:15px;font-weight:600;color:var(--tx2)}
+.sheet-danger{margin-top:4px}
+
+/* Feuille d'action (confirmation) */
+.as-wrap{position:absolute;left:10px;right:10px;bottom:calc(var(--safe-b) + 10px);display:flex;flex-direction:column;gap:10px;transform:translateY(120%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-width:520px;margin:0 auto}
+.ov.show .as-wrap{transform:none}
+.asheet{background:var(--sheet);border-radius:18px;overflow:hidden}
+.as-msg{padding:20px 22px 18px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.as-t{font-size:17px;line-height:23px;font-weight:700;overflow-wrap:anywhere}
+.as-s{font-size:14px;line-height:19px;color:var(--tx2)}
+.asbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:58px;border:0;border-top:1px solid var(--sep);background:transparent;font-size:19px;font-weight:700;color:var(--acc-tx)}
+.asbtn.danger{color:var(--danger)}
+.asbtn .ic{width:22px;height:22px}
+.asbtn.cancel{border-top:0;border-radius:18px;background:var(--sheet);color:var(--tx)}
+
+/* Paysage : l'appli est pensée pour le portrait */
+.landscape{display:none}
+@media (orientation:landscape) and (max-height:500px){
+  .landscape{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--bg);color:var(--tx2);font-size:17px;font-weight:600;text-align:center;padding:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<main id="view-play" class="view" aria-label="Jouer"></main>
+<main id="view-comments" class="view" aria-label="Commentaires" hidden></main>
+<main id="view-library" class="view" aria-label="Bibliothèque" hidden></main>
+<main id="view-stats" class="view" aria-label="Stats" hidden></main>
+<nav class="tabbar" id="tabbar" aria-label="Onglets"></nav>
+<div id="overlays"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+<div class="landscape" aria-hidden="true">Tourne ton iPhone en mode portrait 🎷</div>
+
+<script>
+'use strict';
+/* =========================================================
+   Réglages — constantes de l'algorithme et de l'appli
+   ========================================================= */
+const CONFIG = {
+  WEIGHT_NEVER_PLAYED: 15,   // titre jamais joué
+  WEIGHT_BASE_MAX: 11,       // poids = 11 − note (notes 0 à 9)
+  WEIGHT_PERFECT: 0.5,       // titre à 10
+  AGE_DAYS_CAP: 30,          // bonus d'ancienneté : ×1 → ×2 sur 30 jours
+  TEMPO_MIN: 30,
+  TEMPO_MAX: 250,
+  TEMPO_DEFAULT: 100,
+  NAME_MAX: 80,
+  EXPORT_REMINDER_DAYS: 30,
+  CLICK_FREQ: 1000,          // Hz
+  CLICK_DURATION: 0.03,      // s
+  CLICK_GAIN: 0.45,
+  SCHEDULER_MS: 25,          // période du minuteur d'ordonnancement
+  SCHEDULE_AHEAD: 0.1,       // s planifiées à l'avance
+  FLASH_DURATION: 0.1,       // s
+  DRAW_ANIM_MS: 850,
+  HISTORY_PREVIEW: 5,
+  CHART_MAX_POINTS: 20,
+};
+const STORAGE_KEY = 'saxtrainer.v1';
+const THEMES = { auto: 'Auto', light: 'Clair', dark: 'Sombre' };
+const THEME_COLORS = { light: '#F3EADA', dark: '#1E1513' };
+const SCHEMA_VERSION = 1;
+const DAY_MS = 86400000;
+
+/* =========================================================
+   Algorithme de tirage — fonctions pures
+   ========================================================= */
+/**
+ * Calcule le poids de chaque titre.
+ * @param {Array} titles   [{id, ...}]
+ * @param {Array} sessions [{titleId, note, date}]
+ * @param {string|null} lastDrawnId  titre tiré précédemment (exclu sauf si un seul titre)
+ * @param {Date|number} now
+ * @returns {Array} [{titleId, weight, base, factor, lastNote, days}]
+ */
+function computeWeights(titles, sessions, lastDrawnId, now) {
+  const nowMs = +now;
+  const last = new Map();
+  for (const s of sessions) {
+    const t = Date.parse(s.date);
+    if (Number.isNaN(t)) continue;
+    const cur = last.get(s.titleId);
+    if (!cur || t >= cur.t) last.set(s.titleId, { note: s.note, t });
+  }
+  const excluded = titles.length > 1 ? lastDrawnId : null;
+  return titles.map((title) => {
+    const l = last.get(title.id);
+    let base, factor = 1, days = null;
+    if (!l) {
+      base = CONFIG.WEIGHT_NEVER_PLAYED;
+    } else {
+      base = l.note >= 10 ? CONFIG.WEIGHT_PERFECT : CONFIG.WEIGHT_BASE_MAX - l.note;
+      days = Math.max(0, (nowMs - l.t) / DAY_MS);
+      factor = 1 + Math.min(days, CONFIG.AGE_DAYS_CAP) / CONFIG.AGE_DAYS_CAP;
+    }
+    const weight = title.id === excluded ? 0 : base * factor;
+    return { titleId: title.id, weight, base, factor, lastNote: l ? l.note : null, days };
+  });
+}
+
+/** Tire un id proportionnellement aux poids. rnd() ∈ [0,1). */
+function pickWeighted(weights, rnd = Math.random) {
+  const pool = weights.filter((w) => w.weight > 0);
+  if (!pool.length) return weights.length ? weights[0].titleId : null;
+  const total = pool.reduce((a, w) => a + w.weight, 0);
+  let r = rnd() * total;
+  for (const w of pool) { r -= w.weight; if (r < 0) return w.titleId; }
+  return pool[pool.length - 1].titleId;
+}
+
+/* =========================================================
+   Données (localStorage)
+   ========================================================= */
+function emptyDb() {
+  return { schemaVersion: SCHEMA_VERSION, titles: [], sessions: [], comments: [], meta: { lastDrawnTitleId: null, lastExportAt: null, theme: 'auto' } };
+}
+const uuid = () => (crypto && crypto.randomUUID) ? crypto.randomUUID()
+  : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+const clampTempo = (v) => Math.min(CONFIG.TEMPO_MAX, Math.max(CONFIG.TEMPO_MIN, Math.round(v)));
+const validIso = (s) => typeof s === 'string' && !Number.isNaN(Date.parse(s));
+
+/** Valide et nettoie un objet de données. Renvoie null si le format est invalide. */
+function normalizeDb(d) {
+  if (!d || typeof d !== 'object' || d.schemaVersion !== SCHEMA_VERSION || !Array.isArray(d.titles)) return null;
+  const out = emptyDb();
+  const ids = new Set();
+  for (const t of d.titles) {
+    if (!t || typeof t.id !== 'string' || ids.has(t.id) || typeof t.name !== 'string') continue;
+    const name = t.name.trim().slice(0, CONFIG.NAME_MAX);
+    if (!name) continue;
+    const tempo = Number(t.tempo);
+    ids.add(t.id);
+    out.titles.push({ id: t.id, name, tempo: Number.isFinite(tempo) ? clampTempo(tempo) : CONFIG.TEMPO_DEFAULT, createdAt: validIso(t.createdAt) ? t.createdAt : new Date().toISOString() });
+  }
+  for (const s of (Array.isArray(d.sessions) ? d.sessions : [])) {
+    if (!s || !ids.has(s.titleId) || !validIso(s.date)) continue;
+    const note = Number(s.note);
+    if (!Number.isInteger(note) || note < 0 || note > 10) continue;
+    const tu = Number(s.tempoUsed);
+    out.sessions.push({ id: typeof s.id === 'string' ? s.id : uuid(), titleId: s.titleId, note, tempoUsed: Number.isFinite(tu) ? clampTempo(tu) : null, date: s.date });
+  }
+  for (const c of (Array.isArray(d.comments) ? d.comments : [])) {
+    if (!c || !ids.has(c.titleId) || typeof c.text !== 'string' || !c.text.trim()) continue;
+    out.comments.push({ id: typeof c.id === 'string' ? c.id : uuid(), titleId: c.titleId, text: c.text, createdAt: validIso(c.createdAt) ? c.createdAt : new Date().toISOString(), done: !!c.done, doneAt: c.done && validIso(c.doneAt) ? c.doneAt : null });
+  }
+  const m = d.meta && typeof d.meta === 'object' ? d.meta : {};
+  out.meta = Object.assign({}, m, {
+    lastDrawnTitleId: ids.has(m.lastDrawnTitleId) ? m.lastDrawnTitleId : null,
+    lastExportAt: validIso(m.lastExportAt) ? m.lastExportAt : null,
+    theme: THEMES[m.theme] ? m.theme : 'auto',
+  });
+  return out;
+}
+
+function loadDb() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return emptyDb();
+    return normalizeDb(JSON.parse(raw)) || emptyDb();
+  } catch (e) { return emptyDb(); }
+}
+let saveWarned = false;
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); return true; }
+  catch (e) {
+    if (!saveWarned) { saveWarned = true; showToast({ tone: 'r', icon: 'warn', title: 'Enregistrement impossible', sub: 'Le stockage du téléphone a refusé l’écriture.' }); }
+    return false;
+  }
+}
+let db = loadDb();
+
+/* Thème : auto (réglage de l'iPhone), clair ou sombre */
+function applyTheme() {
+  const t = db.meta.theme, root = document.documentElement;
+  if (t === 'light' || t === 'dark') root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+  document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
+    const own = el.media.includes('dark') ? 'dark' : 'light';
+    el.content = THEME_COLORS[t === 'auto' ? own : t];
+  });
+}
+applyTheme();
+
+/* Valeurs dérivées */
+function indexStats() {
+  const idx = new Map();
+  for (const t of db.titles) idx.set(t.id, { sessions: [], last: null, lastDate: null, best: null, count: 0 });
+  for (const s of db.sessions) { const e = idx.get(s.titleId); if (e) e.sessions.push(s); }
+  for (const e of idx.values()) {
+    e.sessions.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+    e.count = e.sessions.length;
+    if (e.count) {
+      const l = e.sessions[e.count - 1];
+      e.last = l.note; e.lastDate = l.date;
+      e.best = e.sessions.reduce((m, s) => Math.max(m, s.note), 0);
+    }
+  }
+  return idx;
+}
+const getTitle = (id) => db.titles.find((t) => t.id === id) || null;
+const openComments = (titleId) => db.comments.filter((c) => !c.done && (!titleId || c.titleId === titleId));
+const byNewest = (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt);
+const sortByName = (a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+function perfectCount(idx) { let n = 0; for (const e of idx.values()) if (e.last === 10) n++; return n; }
+
+/* =========================================================
+   Utilitaires d'affichage
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const tone = (v) => (v === null || v === undefined ? 'n' : v <= 3 ? 'r' : v <= 6 ? 'o' : v <= 9 ? 'g' : 'x');
+const fmtDec = (v) => v.toFixed(1).replace('.', ',');
+
+function dayDiff(iso, now = new Date()) {
+  const d = new Date(iso);
+  const a = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const b = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((b - a) / DAY_MS);
+}
+function relDay(iso, long = false) {
+  const n = dayDiff(iso);
+  if (n <= 0) return 'aujourd’hui';
+  if (n === 1) return 'hier';
+  return 'il y a ' + n + (long ? ' jours' : ' j');
+}
+const fmtShort = (iso) => {
+  const d = new Date(iso);
+  const opts = { day: 'numeric', month: 'short' };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return new Intl.DateTimeFormat('fr-FR', opts).format(d);
+};
+const plural = (n, one, many) => n + ' ' + (n > 1 ? many : one);
+
+const IC = {
+  shuffle: '<path d="M3.5 7h3c4.5 0 6.5 10 11 10h3"/><path d="M3.5 17h3c1.7 0 3-1.4 4-3.2"/><path d="M13.6 10.2c1-1.8 2.3-3.2 3.9-3.2h3"/><path d="M18 4.5L20.5 7 18 9.5"/><path d="M18 14.5l2.5 2.5-2.5 2.5"/>',
+  comment: '<path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5H10.5L6 20.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z"/><path d="M8 10h8M8 13.2h5"/>',
+  tabPlay: '<circle cx="12" cy="12" r="9.2"/><path d="M10 8.6l5.4 3.4-5.4 3.4z"/>',
+  library: '<path d="M3.5 6.5h9M3.5 11.5h9M3.5 16.5h6"/><path d="M18.5 15.8V4.5l2.6 1.3"/><circle cx="16.3" cy="16.3" r="2.3"/>',
+  stats: '<path d="M5 19.5v-6.5M10 19.5V6.5M15 19.5v-9M20 19.5V4.5"/>',
+  check: '<path d="M5.5 12.5l4.2 4.2 8.8-9.4"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  chevR: '<path d="M9.5 6l6 6-6 6"/>',
+  chevL: '<path d="M14.5 5.5L8 12l6.5 6.5"/>',
+  trash: '<path d="M5 7h14M10 7V4.8h4V7M7 7l1 12.2h8L17 7"/>',
+  pencil: '<path d="M5 19l1-4.2L16 4.8l3.2 3.2-10 10z"/><path d="M13.8 7l3.2 3.2"/>',
+  export: '<path d="M12 14.5V4M8 7.5L12 4l4 3.5"/><path d="M5.5 12v7.5h13V12"/>',
+  import: '<path d="M12 4v10.5M8 11l4 3.5 4-3.5"/><path d="M5.5 12v7.5h13V12"/>',
+  warn: '<path d="M12 4.2l8.5 15H3.5z"/><path d="M12 10v4.2M12 16.8v.2"/>',
+  reset: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v3.7h3.7"/>',
+  sliders: '<path d="M4 7.5h9M17.5 7.5H20M4 16.5h3.5M11.5 16.5H20"/><circle cx="15.3" cy="7.5" r="2.2"/><circle cx="9.5" cy="16.5" r="2.2"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+  music: '<path d="M9 17.2V6.2l10-2.2v11"/><circle cx="6.8" cy="17.2" r="2.3"/><circle cx="16.8" cy="15" r="2.3"/><path d="M9 9.6l10-2.2"/>',
+};
+const ICF = {
+  play: '<path d="M8 5.2v13.6L19 12z"/>',
+  pause: '<rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/>',
+  star: '<path d="M12 3.8l2.5 5.2 5.7.8-4.1 4 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/>',
+  spark: '<path d="M12 2l1.8 8.2L22 12l-8.2 1.8L12 22l-1.8-8.2L2 12l8.2-1.8z"/>',
+};
+const ic = (n, cls = '', style = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true"${style ? ` style="${style}"` : ''}>${IC[n]}</svg>`;
+const icf = (n, cls = '', style = '') => `<svg class="icf ${cls}" viewBox="0 0 24 24" aria-hidden="true"${style ? ` style="${style}"` : ''}>${ICF[n]}</svg>`;
+const pill = (v, opts = {}) => `<span class="pill num tone-${tone(v)}${opts.lg ? ' lg' : ''}" aria-label="${v === null ? 'Jamais joué' : 'Dernière note ' + v + ' sur 10'}">${v === null ? '–' : v + (opts.of ? '/10' : '')}</span>`;
+
+/* =========================================================
+   État de l'interface (non persistant)
+   ========================================================= */
+const ui = {
+  tab: 'play',
+  play: { state: 'idle' },          // idle | drawing | active
+  commentsFilter: 'todo',           // todo | done | all
+  lib: { view: 'list', ficheId: null, search: '', histAll: false },
+  statsSort: 'note',                // note | name
+};
+
+/* =========================================================
+   Métronome — Web Audio, ordonnancement « lookahead »
+   ========================================================= */
+const Metro = {
+  ctx: null, playing: false, bpm: 120, nextTime: 0, beat: 0, timer: null, raf: 0,
+  queue: [], nodes: [], flashOffAt: 0, wake: null, onChange: null,
+
+  ensureContext() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      this.ctx = new AC({ latencyHint: 'interactive' });
+    }
+    if (this.ctx.state !== 'running') { try { this.ctx.resume(); } catch (e) {} }
+    return this.ctx;
+  },
+  start(bpm) {
+    if (this.playing) return;
+    const ctx = this.ensureContext();
+    if (!ctx) { showToast({ tone: 'r', icon: 'warn', title: 'Audio indisponible', sub: 'Ce navigateur ne gère pas Web Audio.' }); return; }
+    this.bpm = bpm; this.playing = true; this.beat = 0; this.queue = [];
+    this.nextTime = ctx.currentTime + 0.08;
+    this.schedule();
+    this.timer = setInterval(() => this.schedule(), CONFIG.SCHEDULER_MS);
+    const loop = () => { if (!this.playing) return; this.draw(); this.raf = requestAnimationFrame(loop); };
+    this.raf = requestAnimationFrame(loop);
+    this.lockScreen();
+    if (this.onChange) this.onChange();
+  },
+  stop() {
+    if (!this.playing) return;
+    this.playing = false;
+    clearInterval(this.timer); this.timer = null;
+    cancelAnimationFrame(this.raf);
+    this.queue = [];
+    const now = this.ctx ? this.ctx.currentTime : 0;
+    for (const n of this.nodes) if (n.t > now) { try { n.osc.stop(); n.osc.disconnect(); } catch (e) {} }
+    this.nodes = [];
+    this.flashOffAt = 0; setFlash(-1);
+    this.releaseScreen();
+    if (this.onChange) this.onChange();
+  },
+  toggle(bpm) { this.playing ? this.stop() : this.start(bpm); },
+  setBpm(b) { this.bpm = b; },
+  schedule() {
+    const ctx = this.ctx;
+    if (this.nextTime < ctx.currentTime - 0.05) this.nextTime = ctx.currentTime + 0.05; // rattrapage
+    while (this.nextTime < ctx.currentTime + CONFIG.SCHEDULE_AHEAD) {
+      this.click(this.nextTime);
+      this.queue.push({ time: this.nextTime, beat: this.beat });
+      this.nextTime += 60 / this.bpm;
+      this.beat = (this.beat + 1) % 4;
+    }
+    this.nodes = this.nodes.filter((n) => n.t > ctx.currentTime - 0.2);
+  },
+  click(t) {
+    const ctx = this.ctx;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(CONFIG.CLICK_FREQ, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(CONFIG.CLICK_GAIN, t + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + CONFIG.CLICK_DURATION);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t); osc.stop(t + CONFIG.CLICK_DURATION + 0.01);
+    this.nodes.push({ osc, t });
+  },
+  draw() {
+    const ctx = this.ctx;
+    const heard = ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0);
+    let fired = null;
+    while (this.queue.length && this.queue[0].time <= heard) fired = this.queue.shift();
+    if (fired) { setFlash(fired.beat); this.flashOffAt = fired.time + CONFIG.FLASH_DURATION; }
+    else if (this.flashOffAt && heard >= this.flashOffAt) { setFlash(-1); this.flashOffAt = 0; }
+  },
+  async lockScreen() {
+    try { if ('wakeLock' in navigator) this.wake = await navigator.wakeLock.request('screen'); } catch (e) { this.wake = null; }
+  },
+  releaseScreen() {
+    try { if (this.wake) this.wake.release(); } catch (e) {}
+    this.wake = null;
+  },
+};
+function setFlash(beat) {
+  const card = document.getElementById('metro');
+  if (!card) return;
+  card.classList.toggle('flash', beat >= 0);
+  $$('.beat', card).forEach((el, i) => el.classList.toggle('on', i === beat));
+}
+Metro.onChange = () => updateMetroUI();
+document.addEventListener('visibilitychange', () => { if (document.hidden) Metro.stop(); });
+window.addEventListener('pagehide', () => Metro.stop());
+
+/* =========================================================
+   Barre d'onglets & navigation
+   ========================================================= */
+const TABS = [
+  { id: 'play', label: 'Jouer', icon: 'tabPlay' },
+  { id: 'comments', label: 'Commentaires', icon: 'comment' },
+  { id: 'library', label: 'Bibliothèque', icon: 'library' },
+  { id: 'stats', label: 'Stats', icon: 'stats' },
+];
+function renderTabbar() {
+  $('#tabbar').innerHTML = TABS.map((t) => `<button class="tab" data-action="tab" data-tab="${t.id}"${ui.tab === t.id ? ' aria-current="page"' : ''}>${ic(t.icon)}<span>${t.label}</span></button>`).join('');
+}
+function showTab(id, opts = {}) {
+  if (id !== ui.tab) Metro.stop();
+  const same = id === ui.tab;
+  ui.tab = id;
+  if (id === 'library' && same && !opts.keepLib) { ui.lib.view = 'list'; ui.lib.ficheId = null; }
+  for (const t of TABS) $('#view-' + t.id).hidden = t.id !== id;
+  renderTabbar();
+  renderView(id);
+  if (same && !opts.keepScroll) $('#view-' + id).scrollTo({ top: 0, behavior: 'smooth' });
+}
+function renderView(id) {
+  if (id === 'play') renderPlay();
+  else if (id === 'comments') renderComments();
+  else if (id === 'library') renderLibrary();
+  else if (id === 'stats') renderStats();
+}
+const renderCurrent = () => renderView(ui.tab);
+
+/* =========================================================
+   Onglet Jouer
+   ========================================================= */
+function playHeader(idx, withRelaunch) {
+  const total = db.titles.length, done = perfectCount(idx);
+  const pct = total ? Math.round(done / total * 100) : 0;
+  return `<header class="play-head">
+    <div class="play-head-row">
+      <p class="num prog-txt"><b>${done}</b> / ${plural(total, 'titre', 'titres')} à 10</p>
+      ${withRelaunch ? `<button class="lnk relaunch" data-action="draw">${ic('shuffle')}Relancer le tirage</button>` : ''}
+    </div>
+    <div class="pbar" role="progressbar" aria-label="Titres à 10" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><div style="width:${pct}%"></div></div>
+  </header>`;
+}
+
+function renderPlay() {
+  const v = $('#view-play');
+  if (!db.titles.length) {
+    ui.play = { state: 'idle' };
+    v.innerHTML = `<div class="empty-play">
+      <div class="emblem">${ic('music')}</div>
+      <div><h1>Bienvenue dans Sax Trainer</h1>
+      <p>Ajoute tes morceaux avec leur tempo. À chaque séance, l’appli tirera au sort celui à travailler, jusqu’à 10/10 partout.</p></div>
+      <button class="btn" data-action="first-add">${ic('plus')}Ajouter mes morceaux</button>
+    </div>`;
+    return;
+  }
+  if (ui.play.state === 'drawing') return; // l'animation gère l'affichage
+  if (ui.play.state === 'active' && !getTitle(ui.play.titleId)) ui.play = { state: 'idle' };
+  const idx = indexStats();
+  if (ui.play.state !== 'active') {
+    const todo = openComments().length;
+    v.innerHTML = `${playHeader(idx, false)}
+      <div class="idle-center">
+        <button class="draw" data-action="draw">${ic('shuffle')}<span>Tirer un morceau</span></button>
+        <div class="idle-foot">
+          <p class="hint">Les titres les moins bien notés sortent plus souvent.</p>
+          ${todo ? `<button class="btn2" data-action="goto-todo">${ic('comment')}<span>${plural(todo, 'commentaire', 'commentaires')} à faire</span></button>` : ''}
+        </div>
+      </div>`;
+    return;
+  }
+  const p = ui.play, t = getTitle(p.titleId), st = idx.get(t.id);
+  const lastLine = st.last === null
+    ? `${pill(null)}<span>Jamais joué</span>`
+    : `<span>Dernière fois</span>${pill(st.last, { of: true })}<span>· ${relDay(st.lastDate)}</span>`;
+  const todos = p.todoIds.map((id) => db.comments.find((c) => c.id === id)).filter(Boolean);
+  let grid = '';
+  for (let n = 0; n <= 10; n++) {
+    grid += `<button class="gbtn num tone-${tone(n)}${n === 10 ? ' ten' : ''}" role="radio" aria-checked="${p.note === n}" aria-label="${n} sur 10" data-action="note" data-n="${n}">${n}${n === 10 ? icf('star') : ''}</button>`;
+  }
+  v.innerHTML = `${playHeader(idx, true)}
+    <div class="play-scroll" id="playScroll">
+      <div class="song-head">
+        <h1 class="song-title">${esc(t.name)}</h1>
+        <div class="song-meta"><span class="num tempo">♩ = ${t.tempo}</span><span class="dot-sep"></span>${lastLine}</div>
+      </div>
+      <section class="card metro" id="metro" aria-label="Métronome">
+        <div class="metro-top">
+          <button class="play" id="metroPlay" data-action="metro-toggle" aria-label="Lancer le métronome">${icf('play')}</button>
+          <div class="bpm"><span class="num bpm-val" id="bpmVal">${p.bpm}</span><span class="bpm-unit">BPM</span></div>
+          <div class="beats" aria-hidden="true"><span class="beat first"></span><span class="beat"></span><span class="beat"></span><span class="beat"></span></div>
+        </div>
+        <div class="metro-ctrl">
+          <button class="step num" data-hold="bpm" data-step="-5" aria-label="Moins 5 BPM">−5</button>
+          <button class="step num" data-hold="bpm" data-step="-1" aria-label="Moins 1 BPM">−1</button>
+          <input class="rng" id="bpmRange" type="range" min="${CONFIG.TEMPO_MIN}" max="${CONFIG.TEMPO_MAX}" step="1" value="${p.bpm}" aria-label="Tempo">
+          <button class="step num" data-hold="bpm" data-step="1" aria-label="Plus 1 BPM">+1</button>
+          <button class="step num" data-hold="bpm" data-step="5" aria-label="Plus 5 BPM">+5</button>
+        </div>
+        <div class="metro-mod" id="metroMod" hidden>
+          <button class="lnk" data-action="bpm-reset" style="padding-left:2px">${ic('reset')}<span id="bpmResetLbl">Tempo du morceau</span></button>
+          <button class="lnk" data-action="bpm-save" style="padding-right:2px;color:var(--tx2)">Enregistrer ce tempo</button>
+        </div>
+      </section>
+      ${todos.length ? `<section class="todo-sec"><h2 class="sec">À faire sur ce morceau</h2>
+        ${todos.map((c) => `<div class="todo-row${c.done ? ' is-done' : ''}" data-cid="${c.id}">
+          <button class="chk" data-action="comment-toggle" data-id="${c.id}" aria-label="${c.done ? 'Marquer comme à faire' : 'Marquer comme fait'}"><span>${ic('check')}</span></button>
+          <p class="ctext-main">${esc(c.text)}</p></div>`).join('')}
+      </section>` : ''}
+      <textarea class="field" id="playComment" rows="2" aria-label="Commentaire sur la séance" placeholder="Un point à retravailler, une modif sur la partition…">${esc(p.comment)}</textarea>
+    </div>
+    <div class="dock">
+      <div class="dock-head"><h2 class="sec">Ta note</h2><span>0 = à retravailler · 10 = sans erreur</span></div>
+      <div class="grid" role="radiogroup" aria-label="Note de 0 à 10">${grid}</div>
+      <button class="btn" id="validateBtn" data-action="validate"${p.note === null ? ' disabled' : ''}>${ic('check')}Valider</button>
+    </div>`;
+  const ta = $('#playComment');
+  autoGrow(ta);
+  ta.addEventListener('input', () => { ui.play.comment = ta.value; autoGrow(ta); });
+  $('#bpmRange').addEventListener('input', (e) => setPlayBpm(Number(e.target.value)));
+  updateMetroUI();
+}
+function autoGrow(ta) { ta.style.height = 'auto'; ta.style.height = Math.min(Math.max(ta.scrollHeight, 66), 180) + 'px'; }
+
+function updateMetroUI() {
+  if (ui.play.state !== 'active') return;
+  const t = getTitle(ui.play.titleId); if (!t) return;
+  const btn = $('#metroPlay'); if (!btn) return;
+  btn.innerHTML = Metro.playing ? icf('pause') : icf('play');
+  btn.setAttribute('aria-label', Metro.playing ? 'Arrêter le métronome' : 'Lancer le métronome');
+  $('#bpmVal').textContent = ui.play.bpm;
+  const r = $('#bpmRange'); if (Number(r.value) !== ui.play.bpm) r.value = ui.play.bpm;
+  const mod = ui.play.bpm !== t.tempo;
+  $('#metroMod').hidden = !mod;
+  $('#bpmResetLbl').textContent = `Tempo du morceau (${t.tempo})`;
+}
+function setPlayBpm(b) {
+  if (ui.play.state !== 'active') return;
+  ui.play.bpm = clampTempo(b);
+  Metro.setBpm(ui.play.bpm);
+  updateMetroUI();
+}
+
+function startPlaying(id) {
+  const t = getTitle(id); if (!t) return;
+  Metro.stop();
+  ui.play = {
+    state: 'active', titleId: id, bpm: t.tempo, note: null, comment: '',
+    todoIds: openComments(id).sort(byNewest).map((c) => c.id),
+  };
+  renderPlay();
+}
+
+let drawTimers = [];
+function startDraw() {
+  if (ui.play.state === 'drawing' || !db.titles.length) return;
+  Metro.stop();
+  const weights = computeWeights(db.titles, db.sessions, db.meta.lastDrawnTitleId, new Date());
+  const id = pickWeighted(weights);
+  if (!id) return;
+  db.meta.lastDrawnTitleId = id;
+  save();
+  ui.play = { state: 'drawing', titleId: id };
+  document.activeElement && document.activeElement.blur && document.activeElement.blur();
+
+  // Rouleau : noms aléatoires, le titre tiré au centre, suivi de 2 noms
+  const names = [];
+  const pickName = () => db.titles[Math.floor(Math.random() * db.titles.length)].name;
+  const N = 16;
+  for (let i = 0; i < N; i++) {
+    let n = pickName();
+    if (db.titles.length > 1) { let guard = 0; while (names.length && n === names[names.length - 1] && guard++ < 8) n = pickName(); }
+    names.push(n);
+  }
+  const target = names.length;
+  names.push(getTitle(id).name, pickName(), pickName());
+  const H = 66, C = 132;
+  const v = $('#view-play');
+  v.innerHTML = `${playHeader(indexStats(), false)}
+    <div class="draw-center">
+      <p class="draw-status" role="status">${ic('shuffle')}Tirage…</p>
+      <div class="reel" aria-hidden="true">
+        <div class="band"></div>
+        <div class="reel-win"><div class="reel-strip" id="reelStrip">${names.map((n) => `<div class="ri"><span>${esc(n)}</span></div>`).join('')}</div></div>
+        <div class="mark l"></div><div class="mark r"></div>
+      </div>
+      <p class="hint">Le rouleau ralentit puis s’arrête sur le morceau à travailler.</p>
+    </div>`;
+  const strip = $('#reelStrip');
+  const items = Array.from(strip.children);
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dur = reduce ? 0 : CONFIG.DRAW_ANIM_MS;
+  strip.style.transform = `translateY(${C - 2 * H}px)`;
+  strip.getBoundingClientRect();
+  strip.classList.add('moving');
+  strip.style.transition = `transform ${dur}ms cubic-bezier(.12,.62,.22,1.08), filter .3s ease`;
+  strip.style.transform = `translateY(${C - target * H}px)`;
+  drawTimers.forEach(clearTimeout);
+  drawTimers = [
+    setTimeout(() => strip.classList.remove('moving'), dur * 0.55),
+    setTimeout(() => items.forEach((el, i) => { el.className = 'ri d' + Math.min(Math.abs(i - target), 2); }), dur * 0.9),
+    setTimeout(() => {
+      if (ui.play.state === 'drawing' && ui.play.titleId === id) {
+        startPlaying(id);
+        const s = $('#view-play .play-scroll'); if (s) s.scrollTop = 0;
+      }
+    }, dur + (reduce ? 250 : 450)),
+  ];
+}
+
+function validatePlay() {
+  const p = ui.play;
+  if (p.state !== 'active' || p.note === null) return;
+  const t = getTitle(p.titleId); if (!t) return;
+  const prevLast = indexStats().get(t.id).last;
+  const now = new Date().toISOString();
+  db.sessions.push({ id: uuid(), titleId: t.id, note: p.note, tempoUsed: p.bpm, date: now });
+  const text = (p.comment || '').trim();
+  if (text) db.comments.push({ id: uuid(), titleId: t.id, text, createdAt: now, done: false, doneAt: null });
+  save();
+  Metro.stop();
+  const note = p.note, bpm = p.bpm;
+  ui.play = { state: 'idle' };
+  document.body.classList.remove('typing');
+  renderPlay();
+  const idx = indexStats();
+  const done = perfectCount(idx), total = db.titles.length;
+  if (note === 10 && prevLast !== 10) {
+    showCelebration(t, done, total);
+  } else if (note === 10) {
+    showToast({ tone: 'x', icon: 'star', ring: true, title: '10/10', sub: `${t.name} · ${done} / ${total} titres à 10` });
+  } else {
+    showToast({ tone: tone(note), icon: 'check', title: `Noté ${note}/10`, sub: `${t.name} · ♩ = ${bpm}${text ? ' · 1 commentaire ajouté' : ''}` });
+  }
+}
+
+/* =========================================================
+   Toast & célébration
+   ========================================================= */
+let toastTimer = null;
+function showToast({ tone: tn = 'x', icon = 'check', title, sub = '', ring = false, ms = 1800 }) {
+  const el = $('#toast');
+  const isFill = icon in ICF;
+  el.className = `toast tone-${tn}${ring ? ' ring' : ''}`;
+  el.innerHTML = `<span class="tok">${isFill ? icf(icon) : ic(icon)}</span>
+    <div style="min-width:0"><p class="num toast-t"${tn === 'x' && ring ? ' style="color:var(--x-fg)"' : ''}>${esc(title)}</p>${sub ? `<p class="toast-s">${esc(sub)}</p>` : ''}</div>`;
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+function showCelebration(t, done, total) {
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const ov = document.createElement('div');
+  ov.className = 'cele-ov';
+  ov.setAttribute('role', 'status');
+  ov.innerHTML = `<div class="cele">
+    ${icf('spark', 'spark', 'left:34px;top:30px;width:20px;height:20px')}
+    ${icf('spark', 'spark', 'left:64px;top:92px;width:11px;height:11px;opacity:.7')}
+    ${icf('spark', 'spark', 'right:40px;top:40px;width:15px;height:15px')}
+    ${icf('spark', 'spark', 'right:62px;top:104px;width:22px;height:22px;opacity:.85')}
+    ${icf('spark', 'spark', 'right:30px;top:150px;width:10px;height:10px;opacity:.6')}
+    <div class="medal">${icf('star')}</div>
+    <p class="num cele-big">10/10</p>
+    <p class="cele-name">${esc(t.name)}, sans erreur</p>
+    <p class="hint">Un titre de plus à 10. Bravo.</p>
+    <div class="cele-foot">
+      <p class="num" style="font-size:16px;font-weight:700"><span style="color:var(--x-fg)">${done}</span> / ${plural(total, 'titre', 'titres')} à 10</p>
+      <div class="pbar"><div style="width:${pct}%"></div></div>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('show'));
+  const close = () => { ov.classList.remove('show'); setTimeout(() => ov.remove(), 260); };
+  ov.addEventListener('click', close);
+  setTimeout(close, 3200);
+}
+
+/* =========================================================
+   Onglet Commentaires
+   ========================================================= */
+function commentRow(c, { swipe = true, date = true } = {}) {
+  return `<div class="rwrap${swipe ? ' swipeable' : ''}${c.done ? ' is-done' : ''}" data-cid="${c.id}">
+    ${swipe ? `<button class="swdel" data-action="comment-delete" data-id="${c.id}" aria-label="Supprimer le commentaire">${ic('trash')}<span>Supprimer</span></button>` : ''}
+    <div class="crow">
+      <button class="chk" data-action="comment-toggle" data-id="${c.id}" aria-label="${c.done ? 'Marquer comme à faire' : 'Marquer comme fait'}"><span>${ic('check')}</span></button>
+      <button class="ctext" data-action="comment-edit" data-id="${c.id}" aria-label="Modifier le commentaire">
+        <span class="ctext-main">${esc(c.text)}</span>${date ? `<span class="ctext-meta">${relDay(c.createdAt)}</span>` : ''}
+      </button>
+    </div>
+  </div>`;
+}
+function renderComments() {
+  const f = ui.commentsFilter;
+  const keep = (c) => (f === 'all' ? true : f === 'done' ? c.done : !c.done);
+  const groupsMap = new Map();
+  for (const c of db.comments) {
+    if (!keep(c)) continue;
+    if (!groupsMap.has(c.titleId)) groupsMap.set(c.titleId, []);
+    groupsMap.get(c.titleId).push(c);
+  }
+  const groups = [];
+  for (const [tid, items] of groupsMap) {
+    const t = getTitle(tid); if (!t) continue;
+    items.sort(byNewest);
+    const todo = items.filter((c) => !c.done).length, done = items.length - todo;
+    const parts = []; if (todo) parts.push(todo + ' à faire'); if (done) parts.push(done + (done > 1 ? ' faits' : ' fait'));
+    groups.push({ t, items, count: parts.join(' · '), newest: Date.parse(items[0].createdAt) });
+  }
+  groups.sort((a, b) => b.newest - a.newest);
+  const seg = (k, l) => `<button data-action="comments-filter" data-f="${k}" aria-pressed="${f === k}">${l}</button>`;
+  const emptyTitle = !db.comments.length ? 'Aucun commentaire pour l’instant'
+    : f === 'todo' ? 'Aucun commentaire à faire 🎷' : f === 'done' ? 'Aucun commentaire fait' : 'Aucun commentaire pour l’instant';
+  $('#view-comments').innerHTML = `<div class="page">
+    <div class="navrow"><button class="navbtn" data-action="comment-new" aria-label="Ajouter un commentaire">${ic('plus')}</button></div>
+    <h1 class="lt">Commentaires</h1>
+    <div class="pad"><div class="seg" role="group" aria-label="Filtre">${seg('todo', 'À faire')}${seg('done', 'Faits')}${seg('all', 'Tous')}</div></div>
+    ${groups.length ? `<div class="cgroups">${groups.map((g) => `<section class="cgroup">
+        <div class="cg-head"><h2>${esc(g.t.name)}</h2><span>${g.count}</span></div>
+        <div class="card">${g.items.map((c) => commentRow(c)).join('')}</div>
+      </section>`).join('')}</div>`
+    : `<div class="empty"><div class="emblem">${ic('check')}</div><div><p class="empty-t">${emptyTitle}</p><p class="empty-s">Les points notés après chaque morceau s’afficheront ici.</p></div></div>`}
+  </div>`;
+}
+
+function toggleComment(id) {
+  const c = db.comments.find((x) => x.id === id); if (!c) return;
+  c.done = !c.done;
+  c.doneAt = c.done ? new Date().toISOString() : null;
+  save();
+  $$(`[data-cid="${CSS.escape(id)}"]`).forEach((el) => {
+    el.classList.toggle('is-done', c.done);
+    const b = $('.chk', el); if (b) b.setAttribute('aria-label', c.done ? 'Marquer comme à faire' : 'Marquer comme fait');
+  });
+  if (ui.tab === 'comments' && ui.commentsFilter !== 'all') setTimeout(() => { if (ui.tab === 'comments') renderComments(); }, 450);
+  else if (ui.tab === 'comments') renderComments();
+  else if (ui.tab === 'library') setTimeout(() => { if (ui.tab === 'library') renderLibrary(); }, 450);
+}
+async function deleteComment(id) {
+  const c = db.comments.find((x) => x.id === id); if (!c) return false;
+  const ok = await confirmSheet({ title: 'Supprimer ce commentaire ?', message: c.text.length > 90 ? c.text.slice(0, 90) + '…' : c.text, confirmLabel: 'Supprimer', icon: 'trash' });
+  if (!ok) { closeSwipes(); return false; }
+  db.comments = db.comments.filter((x) => x.id !== id);
+  save();
+  renderCurrent();
+  return true;
+}
+
+function openCommentSheet({ commentId = null, titleId = null } = {}) {
+  const c = commentId ? db.comments.find((x) => x.id === commentId) : null;
+  if (!c && !db.titles.length) { showToast({ tone: 'o', icon: 'warn', title: 'Aucun morceau', sub: 'Ajoute d’abord un morceau dans la Bibliothèque.' }); return; }
+  const titles = db.titles.slice().sort(sortByName);
+  const sel = c ? c.titleId : (titleId || (ui.play.state === 'active' ? ui.play.titleId : titles[0].id));
+  openSheet({
+    title: c ? 'Modifier le commentaire' : 'Nouveau commentaire',
+    body: `<label class="fld"><span class="sec">Morceau</span>
+        <select class="inp" id="cTitle">${titles.map((t) => `<option value="${t.id}"${t.id === sel ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
+      <label class="fld"><span class="sec">Commentaire</span>
+        <textarea class="field tall" id="cText" placeholder="Ex. Changer le doigté mesure 12">${c ? esc(c.text) : ''}</textarea></label>
+      ${c ? `<div class="card sheet-danger"><button class="arow danger" data-sheet="delete">${ic('trash')}Supprimer le commentaire</button></div>` : ''}`,
+    canSave: (root) => $('#cText', root).value.trim().length > 0,
+    onMount: (root) => { if (!c) setTimeout(() => $('#cText', root).focus(), 350); },
+    onSave: (root) => {
+      const text = $('#cText', root).value.trim();
+      const tid = $('#cTitle', root).value;
+      if (!text || !getTitle(tid)) return false;
+      if (c) { c.text = text; c.titleId = tid; }
+      else db.comments.push({ id: uuid(), titleId: tid, text, createdAt: new Date().toISOString(), done: false, doneAt: null });
+      save(); renderCurrent();
+      return true;
+    },
+    onAction: async (act, close) => {
+      if (act === 'delete' && c) { const ok = await deleteComment(c.id); if (ok) close(); }
+    },
+  });
+}
+
+/* =========================================================
+   Onglet Bibliothèque
+   ========================================================= */
+function renderLibrary() {
+  if (ui.lib.view === 'fiche' && getTitle(ui.lib.ficheId)) return renderFiche();
+  ui.lib.view = 'list'; ui.lib.ficheId = null;
+  const v = $('#view-library');
+  v.innerHTML = `<div class="page">
+    <div class="navrow">
+      <button class="navbtn" data-action="lib-data" aria-label="Réglages et sauvegarde">${ic('sliders')}</button>
+      <button class="navbtn" data-action="title-new" aria-label="Ajouter un morceau">${ic('plus')}</button>
+    </div>
+    <h1 class="lt">Bibliothèque</h1>
+    <div class="pad" style="padding-top:10px"><label class="search">${ic('search')}<input type="search" id="libSearch" placeholder="Rechercher" aria-label="Rechercher un morceau" value="${esc(ui.lib.search)}" autocomplete="off"></label></div>
+    <div class="lib-body">
+      <div class="card" id="libList"></div>
+      <section id="reglages" class="fsec">
+        <h2 class="sec" style="padding:0 6px">Apparence</h2>
+        <div class="seg" role="group" aria-label="Thème">${Object.entries(THEMES).map(([k, l]) => `<button data-action="set-theme" data-theme="${k}" aria-pressed="${db.meta.theme === k}">${l}</button>`).join('')}</div>
+        <p class="data-note">Auto suit le mode clair ou sombre de l\u2019iPhone.</p>
+      </section>
+      <section id="donnees" class="fsec">
+        <h2 class="sec" style="padding:0 6px">Données</h2>
+        <div class="card">
+          <button class="drow" data-action="export"><span class="dic">${ic('export')}</span><span style="flex:1">Exporter mes données</span>${ic('chevR', 'chev')}</button>
+          <button class="drow" data-action="import"><span class="dic">${ic('import')}</span><span style="flex:1">Importer</span>${ic('chevR', 'chev')}</button>
+        </div>
+        ${exportStatus()}
+        <p class="data-note">Tes données restent sur ce téléphone. Exporte-les régulièrement vers Fichiers ou iCloud pour ne rien perdre.</p>
+      </section>
+    </div>
+  </div>`;
+  renderLibList();
+  $('#libSearch').addEventListener('input', (e) => { ui.lib.search = e.target.value; renderLibList(); });
+}
+function exportStatus() {
+  const last = db.meta.lastExportAt;
+  if (!last) return db.titles.length ? `<p class="data-warn">${ic('warn')}Aucune sauvegarde pour l’instant. Pense à exporter.</p>` : '';
+  const d = dayDiff(last);
+  if (d > CONFIG.EXPORT_REMINDER_DAYS) return `<p class="data-warn">${ic('warn')}Dernier export il y a ${d} jours. Pense à sauvegarder.</p>`;
+  return `<p class="data-note">Dernier export : ${relDay(last, true)}</p>`;
+}
+function renderLibList() {
+  const el = $('#libList'); if (!el) return;
+  const idx = indexStats();
+  const q = ui.lib.search.trim().toLocaleLowerCase('fr').normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const list = db.titles.slice().sort(sortByName).filter((t) => !q || t.name.toLocaleLowerCase('fr').normalize('NFD').replace(/[̀-ͯ]/g, '').includes(q));
+  if (!db.titles.length) { el.innerHTML = `<p class="list-empty">Aucun morceau pour l’instant.<br>Touche <b>+</b> pour ajouter ton premier titre.</p>`; return; }
+  if (!list.length) { el.innerHTML = `<p class="list-empty">Aucun résultat pour « ${esc(ui.lib.search.trim())} ».</p>`; return; }
+  el.innerHTML = list.map((t) => `<button class="srow" data-action="open-fiche" data-id="${t.id}">
+      <span class="srow-main"><span class="srow-name">${esc(t.name)}</span><span class="num srow-sub">♩ = ${t.tempo}</span></span>
+      ${pill(idx.get(t.id).last)}${ic('chevR', 'chev')}
+    </button>`).join('');
+}
+
+function renderFiche() {
+  const t = getTitle(ui.lib.ficheId);
+  const st = indexStats().get(t.id);
+  const hist = st.sessions.slice().reverse();
+  const shown = ui.lib.histAll ? hist : hist.slice(0, CONFIG.HISTORY_PREVIEW);
+  const todos = openComments(t.id).sort(byNewest);
+  $('#view-library').innerHTML = `<div class="page">
+    <div class="fnav">
+      <button class="lnk" data-action="lib-back">${ic('chevL')}Bibliothèque</button>
+      <button class="lnk" data-action="title-edit" data-id="${t.id}">Modifier</button>
+    </div>
+    <div class="fiche">
+      <div style="padding:0 4px;display:flex;flex-direction:column;gap:2px">
+        <h1 class="f-title">${esc(t.name)}</h1>
+        <span class="num f-tempo">♩ = ${t.tempo}</span>
+      </div>
+      <div class="card f-stats">
+        <div class="f-stat"><span class="f-lab">Dernière note</span>${pill(st.last, { lg: true, of: true })}</div>
+        <div class="f-stat"><span class="f-lab">Meilleure</span><span class="num f-val tone-${tone(st.best)}" style="color:var(--t-fg)">${st.best === null ? '–' : st.best + '/10'}</span></div>
+        <div class="f-stat"><span class="f-lab">Séances</span><span class="num f-val">${st.count}</span></div>
+      </div>
+      <p class="f-last">${st.lastDate ? 'Dernière séance ' + relDay(st.lastDate, true) : 'Jamais joué'}</p>
+      <button class="btn" data-action="play-title" data-id="${t.id}" style="height:56px">${icf('play', '', 'width:22px;height:22px')}Jouer ce titre</button>
+      ${st.count ? `<section class="fsec" style="margin-top:8px">
+        <div class="fsec-h"><h2 class="sec">Évolution</h2><span>${plural(st.count, 'séance', 'séances')}</span></div>
+        <div class="card" style="padding:16px 16px 12px">${evolutionChart(t, st.sessions)}</div>
+      </section>
+      <section class="fsec">
+        <div class="fsec-h"><h2 class="sec">Historique</h2><span>tempo joué</span></div>
+        <div class="card">
+          ${shown.map((s) => `<div class="hrow"><span style="font-size:16px">${fmtShort(s.date)}</span>${pill(s.note)}<span class="num" style="font-size:15px;color:var(--tx2);text-align:right">${s.tempoUsed ? '♩ ' + s.tempoUsed : '–'}</span></div>`).join('')}
+          ${hist.length > CONFIG.HISTORY_PREVIEW ? `<button class="arow sep accent center" data-action="hist-toggle" style="min-height:48px">${ui.lib.histAll ? 'Réduire' : `Tout afficher (${hist.length})`}</button>` : ''}
+        </div>
+      </section>` : ''}
+      <section class="fsec fcom">
+        <div class="fsec-h"><h2 class="sec">Commentaires</h2>${todos.length ? `<span>${todos.length} à faire</span>` : ''}</div>
+        <div class="card">
+          ${todos.map((c) => commentRow(c, { swipe: false, date: false })).join('')}
+          <button class="arow accent${todos.length ? ' sep' : ''}" data-action="comment-new-for" data-id="${t.id}" style="padding-left:14px">${ic('plus', '', 'width:22px;height:22px;stroke-width:2.2')}Ajouter un commentaire</button>
+        </div>
+      </section>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+        <div class="card"><button class="arow" data-action="title-edit" data-id="${t.id}">${ic('pencil', '', 'color:var(--acc-tx)')}<span style="flex:1">Modifier le morceau</span></button></div>
+        <div class="card"><button class="arow danger" data-action="title-delete" data-id="${t.id}">${ic('trash')}Supprimer le morceau</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function evolutionChart(t, sessions) {
+  const list = sessions.slice(-CONFIG.CHART_MAX_POINTS);
+  const n = list.length, x0 = 30, x1 = 315;
+  const xs = (k) => (n > 1 ? x0 + k * (x1 - x0) / (n - 1) : (x0 + x1) / 2);
+  const ys = (v) => 132 - v * 12;
+  const pts = list.map((s, k) => `${xs(k).toFixed(1)},${ys(s.note)}`).join(' ');
+  const best = list.reduce((m, s) => Math.max(m, s.note), 0);
+  return `<svg class="chart" viewBox="0 0 329 168" role="img" aria-label="Évolution des notes de ${esc(t.name)}, de ${list[0].note} à ${list[n - 1].note} sur 10, meilleure note ${best}">
+    <line class="cgoal" x1="26" y1="12" x2="329" y2="12"/>
+    <line class="cgrid" x1="26" y1="72" x2="329" y2="72"/>
+    <line class="cgrid" x1="26" y1="132" x2="329" y2="132"/>
+    <text class="ctx" x="0" y="16">10</text><text class="ctx" x="7" y="76">5</text><text class="ctx" x="7" y="136">0</text>
+    ${n > 1 ? `<polyline class="cline" points="${pts}"/>` : ''}
+    ${list.map((s, k) => `<circle class="cdot tone-${tone(s.note)}" cx="${xs(k).toFixed(1)}" cy="${ys(s.note)}" r="${k === n - 1 ? 7 : 5}"/>`).join('')}
+    <text class="ctx" x="22" y="160">${fmtShort(list[0].date)}</text>
+    ${n > 1 ? `<text class="ctx" x="329" y="160" text-anchor="end">${fmtShort(list[n - 1].date)}</text>` : ''}
+  </svg>`;
+}
+
+function openTitleSheet(id = null) {
+  const t = id ? getTitle(id) : null;
+  openSheet({
+    title: t ? 'Modifier le morceau' : 'Nouveau morceau',
+    body: `<label class="fld"><span class="sec">Nom du morceau</span>
+        <input class="inp" id="fName" type="text" maxlength="${CONFIG.NAME_MAX}" placeholder="Ex. Autumn Leaves" autocomplete="off" autocapitalize="words" enterkeyhint="done" value="${t ? esc(t.name) : ''}"></label>
+      <p class="warn" id="fDup" hidden>${ic('warn')}Un morceau porte déjà ce nom.</p>
+      <div class="fld" role="group" aria-label="Tempo"><span class="sec">Tempo</span>
+        <div class="tempo-card">
+          <button class="bigstep" data-hold="ftempo" data-step="-1" aria-label="Diminuer le tempo">${ic('minus')}</button>
+          <div class="tempo-mid">
+            <input class="num tempo-inp" id="fTempo" type="number" inputmode="numeric" pattern="[0-9]*" min="${CONFIG.TEMPO_MIN}" max="${CONFIG.TEMPO_MAX}" value="${t ? t.tempo : CONFIG.TEMPO_DEFAULT}" aria-label="Tempo en BPM">
+            <span>BPM · ♩ = <span id="fTempoEcho" class="num">${t ? t.tempo : CONFIG.TEMPO_DEFAULT}</span></span>
+          </div>
+          <button class="bigstep" data-hold="ftempo" data-step="1" aria-label="Augmenter le tempo">${ic('plus')}</button>
+        </div>
+        <p class="help">Entre ${CONFIG.TEMPO_MIN} et ${CONFIG.TEMPO_MAX} BPM. Maintiens − ou + pour aller plus vite.</p>
+      </div>`,
+    canSave: (root) => $('#fName', root).value.trim().length > 0,
+    onMount: (root) => {
+      const name = $('#fName', root), tempo = $('#fTempo', root), echo = $('#fTempoEcho', root);
+      const dupCheck = () => {
+        const v = name.value.trim().toLocaleLowerCase('fr');
+        $('#fDup', root).hidden = !v || !db.titles.some((x) => x.id !== id && x.name.trim().toLocaleLowerCase('fr') === v);
+      };
+      name.addEventListener('input', dupCheck); dupCheck();
+      name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); name.blur(); } });
+      tempo.addEventListener('input', () => { const n = Number(tempo.value); echo.textContent = Number.isFinite(n) && tempo.value !== '' ? Math.round(n) : '–'; });
+      tempo.addEventListener('blur', () => { const n = Number(tempo.value); tempo.value = Number.isFinite(n) && tempo.value !== '' ? clampTempo(n) : (t ? t.tempo : CONFIG.TEMPO_DEFAULT); echo.textContent = tempo.value; });
+      if (!t) setTimeout(() => name.focus(), 350);
+    },
+    onSave: (root) => {
+      const name = $('#fName', root).value.trim().slice(0, CONFIG.NAME_MAX);
+      if (!name) return false;
+      const raw = Number($('#fTempo', root).value);
+      const tempo = Number.isFinite(raw) && $('#fTempo', root).value !== '' ? clampTempo(raw) : (t ? t.tempo : CONFIG.TEMPO_DEFAULT);
+      if (t) {
+        t.name = name; t.tempo = tempo;
+        if (ui.play.state === 'active' && ui.play.titleId === t.id && !Metro.playing) ui.play.bpm = tempo;
+        save(); renderCurrent();
+        showToast({ tone: 'x', icon: 'check', title: 'Morceau modifié', sub: `${name} · ♩ = ${tempo}` });
+      } else {
+        db.titles.push({ id: uuid(), name, tempo, createdAt: new Date().toISOString() });
+        save(); renderCurrent();
+        showToast({ tone: 'x', icon: 'check', title: 'Morceau ajouté', sub: `${name} · ♩ = ${tempo}` });
+      }
+      return true;
+    },
+  });
+}
+
+async function deleteTitle(id) {
+  const t = getTitle(id); if (!t) return;
+  const ns = db.sessions.filter((s) => s.titleId === id).length;
+  const nc = db.comments.filter((c) => c.titleId === id).length;
+  const ok = await confirmSheet({
+    title: `Supprimer « ${t.name} » et tout son historique ?`,
+    message: `${ns || nc ? `${plural(ns, 'note', 'notes')} et ${plural(nc, 'commentaire', 'commentaires')} seront effacés. ` : ''}Cette action est définitive.`,
+    confirmLabel: 'Supprimer', icon: 'trash',
+  });
+  if (!ok) return;
+  db.titles = db.titles.filter((x) => x.id !== id);
+  db.sessions = db.sessions.filter((s) => s.titleId !== id);
+  db.comments = db.comments.filter((c) => c.titleId !== id);
+  if (db.meta.lastDrawnTitleId === id) db.meta.lastDrawnTitleId = null;
+  if (ui.play.titleId === id) { Metro.stop(); ui.play = { state: 'idle' }; }
+  save();
+  ui.lib.view = 'list'; ui.lib.ficheId = null;
+  renderLibrary();
+  showToast({ tone: 'n', icon: 'trash', title: 'Morceau supprimé', sub: t.name });
+}
+
+/* Export / import */
+async function exportData() {
+  const d = new Date();
+  const p2 = (n) => String(n).padStart(2, '0');
+  const fname = `saxtrainer-${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}.json`;
+  const json = JSON.stringify(db, null, 2);
+  const markDone = () => { db.meta.lastExportAt = new Date().toISOString(); save(); if (ui.tab === 'library') renderLibrary(); };
+  let file = null;
+  try { file = new File([json], fname, { type: 'application/json' }); } catch (e) {}
+  if (file && navigator.canShare && navigator.share) {
+    let can = false;
+    try { can = navigator.canShare({ files: [file] }); } catch (e) {}
+    if (can) {
+      try {
+        await navigator.share({ files: [file], title: 'Sauvegarde Sax Trainer' });
+        markDone();
+        showToast({ tone: 'x', icon: 'check', title: 'Export terminé', sub: fname });
+      } catch (e) {
+        if (e && e.name !== 'AbortError') showToast({ tone: 'r', icon: 'warn', title: 'Export impossible', sub: 'Réessaie dans un instant.' });
+      }
+      return;
+    }
+  }
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  markDone();
+  showToast({ tone: 'x', icon: 'check', title: 'Export terminé', sub: fname });
+}
+async function importFile(file) {
+  let data = null;
+  try { data = normalizeDb(JSON.parse(await file.text())); } catch (e) { data = null; }
+  if (!data) { showToast({ tone: 'r', icon: 'warn', title: 'Fichier invalide', sub: 'Ce n’est pas une sauvegarde Sax Trainer.' }); return; }
+  const ok = await confirmSheet({
+    title: 'Remplacer toutes les données actuelles ?',
+    message: `Le fichier contient ${plural(data.titles.length, 'morceau', 'morceaux')}, ${plural(data.sessions.length, 'séance', 'séances')} et ${plural(data.comments.length, 'commentaire', 'commentaires')}. Les données actuelles seront effacées.`,
+    confirmLabel: 'Remplacer', icon: 'import',
+  });
+  if (!ok) return;
+  Metro.stop();
+  db = data;
+  save();
+  applyTheme();
+  ui.play = { state: 'idle' }; ui.lib = { view: 'list', ficheId: null, search: '', histAll: false };
+  renderCurrent();
+  showToast({ tone: 'x', icon: 'check', title: 'Données importées', sub: plural(db.titles.length, 'morceau', 'morceaux') });
+}
+$('#importFile').addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) importFile(f); });
+
+/* =========================================================
+   Onglet Stats
+   ========================================================= */
+function renderStats() {
+  const v = $('#view-stats');
+  if (!db.titles.length) {
+    v.innerHTML = `<div class="page"><div class="navrow"></div><h1 class="lt">Stats</h1>
+      <div class="empty"><div class="emblem">${ic('stats')}</div><div><p class="empty-t">Pas encore de stats</p><p class="empty-s">Ajoute des morceaux et note tes séances : ta progression s’affichera ici.</p></div></div></div>`;
+    return;
+  }
+  const idx = indexStats();
+  const played = db.titles.filter((t) => idx.get(t.id).last !== null);
+  const avg = played.length ? played.reduce((a, t) => a + idx.get(t.id).last, 0) / played.length : null;
+  const total = db.titles.length, perfect = perfectCount(idx);
+  const C = 2 * Math.PI * 28, dash = total ? perfect / total * C : 0;
+  // 7 derniers jours
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = [];
+  for (let i = 6; i >= 0; i--) { const d = new Date(today); d.setDate(d.getDate() - i); days.push({ d, c: 0 }); }
+  for (const s of db.sessions) { const dd = dayDiff(s.date); if (dd >= 0 && dd <= 6) days[6 - dd].c++; }
+  const week = days.reduce((a, x) => a + x.c, 0), maxC = Math.max(1, ...days.map((x) => x.c));
+  const L = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+  // Liste
+  const rows = db.titles.map((t) => ({ t, st: idx.get(t.id) }));
+  if (ui.statsSort === 'name') rows.sort((a, b) => sortByName(a.t, b.t));
+  else rows.sort((a, b) => {
+    const la = a.st.last === null ? -1 : a.st.last, lb = b.st.last === null ? -1 : b.st.last;
+    return la - lb || sortByName(a.t, b.t);
+  });
+  const seg = (k, l) => `<button data-action="stats-sort" data-s="${k}" aria-pressed="${ui.statsSort === k}">${l}</button>`;
+  v.innerHTML = `<div class="page"><div class="navrow"></div><h1 class="lt">Stats</h1>
+    <div class="stats">
+      <div class="kpis">
+        <div class="card kpi"><h2 class="sec">Moyenne globale</h2>
+          <p class="num kpi-big"><b>${avg === null ? '–' : fmtDec(avg)}</b><span>/ 10</span></p>
+          <span class="kpi-sub">${played.length ? 'dernières notes de ' + plural(played.length, 'titre joué', 'titres joués') : 'aucun titre joué'}</span></div>
+        <div class="card kpi"><h2 class="sec">Titres à 10</h2>
+          <div style="display:flex;align-items:center;gap:12px">
+            <svg viewBox="0 0 64 64" role="img" aria-label="${perfect} titres sur ${total} à 10" style="width:64px;height:64px;flex:none">
+              <circle class="ring-bg" cx="32" cy="32" r="28"/>
+              ${perfect ? `<circle class="ring-fg" cx="32" cy="32" r="28" transform="rotate(-90 32 32)" style="stroke-dasharray:${dash.toFixed(1)} ${C.toFixed(1)}"/>` : ''}
+            </svg>
+            <p class="num kpi-big" style="gap:3px"><b style="font-size:34px;line-height:38px;color:var(--ok-tx)">${perfect}</b><span>/ ${total}</span></p>
+          </div></div>
+      </div>
+      <div class="card kpi" style="gap:14px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between">
+          <div style="display:flex;flex-direction:column;gap:10px"><h2 class="sec">Séances</h2>
+            <p class="num kpi-big" style="gap:6px"><b style="font-size:40px;line-height:44px">${db.sessions.length}</b><span style="font-size:15px;font-weight:600">au total</span></p></div>
+          <div style="text-align:right;display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:13px;font-weight:600;color:var(--tx2)">7 derniers jours</span>
+            <span class="num" style="font-size:28px;line-height:32px;font-weight:800;color:var(--acc-tx)">${week}</span></div>
+        </div>
+        <div class="week" role="img" aria-label="Séances par jour sur 7 jours : ${days.map((x) => x.c).join(', ')}">
+          ${days.map((x) => `<div class="bar7${x.c ? '' : ' zero'}" style="height:${x.c ? Math.max(8, Math.round(x.c / maxC * 48)) : 4}px"></div>`).join('')}
+        </div>
+        <div class="week-l">${days.map((x) => `<span>${L[x.d.getDay()]}</span>`).join('')}</div>
+      </div>
+      <section class="fsec" style="gap:10px;margin-top:12px">
+        <h2 class="sec" style="padding:0 6px">Par morceau</h2>
+        <div class="seg" role="group" aria-label="Tri">${seg('note', 'À travailler d’abord')}${seg('name', 'A → Z')}</div>
+        <div class="card">${rows.map(({ t, st }) => `<button class="strow" data-action="open-fiche-from-stats" data-id="${t.id}">
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:16px;line-height:21px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span>
+              <span style="font-size:13px;line-height:17px;color:var(--tx3)">${st.count ? plural(st.count, 'séance', 'séances') : 'Jamais joué'}</span>
+            </span>
+            ${st.count ? sparkline(st.sessions) : ''}
+            ${pill(st.last)}
+          </button>`).join('')}</div>
+      </section>
+    </div></div>`;
+}
+function sparkline(sessions) {
+  const last = sessions.slice(-10), n = last.length;
+  const xs = (k) => (n > 1 ? 4 + k * (74 / (n - 1)) : 41);
+  const ys = (v) => 4 + (10 - v) * 2.2;
+  const pts = last.map((s, k) => `${xs(k).toFixed(1)},${ys(s.note).toFixed(1)}`).join(' ');
+  const lv = last[n - 1].note;
+  return `<svg class="tone-${tone(lv)}" viewBox="0 0 82 30" aria-hidden="true" style="width:82px;height:30px;flex:none">
+    ${n > 1 ? `<polyline class="spk" points="${pts}"/>` : ''}<circle class="spkdot" cx="${xs(n - 1).toFixed(1)}" cy="${ys(lv).toFixed(1)}" r="3.5"/></svg>`;
+}
+
+/* =========================================================
+   Feuilles modales
+   ========================================================= */
+function openSheet({ title, body, onSave, canSave = () => true, onMount, onAction }) {
+  const ov = document.createElement('div');
+  ov.className = 'ov';
+  ov.innerHTML = `<div class="scrim" data-sheet="cancel"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+      <div class="grabber"></div>
+      <div class="sheet-head">
+        <button class="lnk" data-sheet="cancel" style="justify-self:start">Annuler</button>
+        <h1>${esc(title)}</h1>
+        <button class="lnk strong" data-sheet="save">Enregistrer</button>
+      </div>
+      <div class="sheet-body">${body}</div>
+    </div>`;
+  $('#overlays').appendChild(ov);
+  const saveBtn = $('[data-sheet="save"]', ov);
+  const refresh = () => { saveBtn.disabled = !canSave(ov); };
+  const close = () => {
+    document.activeElement && document.activeElement.blur && document.activeElement.blur();
+    ov.classList.remove('show'); setTimeout(() => ov.remove(), 320);
+  };
+  ov.addEventListener('input', refresh);
+  ov.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-sheet]'); if (!b) return;
+    const a = b.dataset.sheet;
+    if (a === 'cancel') close();
+    else if (a === 'save') { if (!saveBtn.disabled && onSave(ov) !== false) close(); }
+    else if (onAction) onAction(a, close);
+  });
+  if (onMount) onMount(ov);
+  refresh();
+  requestAnimationFrame(() => ov.classList.add('show'));
+  return ov;
+}
+function confirmSheet({ title, message = '', confirmLabel = 'Confirmer', icon = null, danger = true }) {
+  return new Promise((resolve) => {
+    const ov = document.createElement('div');
+    ov.className = 'ov';
+    ov.innerHTML = `<div class="scrim" data-c="no"></div>
+      <div class="as-wrap" role="alertdialog" aria-modal="true" aria-label="${esc(title)}">
+        <div class="asheet">
+          <div class="as-msg"><p class="as-t">${esc(title)}</p>${message ? `<p class="as-s">${esc(message)}</p>` : ''}</div>
+          <button class="asbtn${danger ? ' danger' : ''}" data-c="yes">${icon ? ic(icon) : ''}${esc(confirmLabel)}</button>
+        </div>
+        <button class="asbtn cancel" data-c="no">Annuler</button>
+      </div>`;
+    $('#overlays').appendChild(ov);
+    let done = false;
+    ov.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-c]'); if (!b || done) return;
+      done = true;
+      ov.classList.remove('show'); setTimeout(() => ov.remove(), 300);
+      resolve(b.dataset.c === 'yes');
+    });
+    requestAnimationFrame(() => ov.classList.add('show'));
+  });
+}
+
+/* =========================================================
+   Interactions : clics délégués
+   ========================================================= */
+let suppressClickUntil = 0;
+const actions = {
+  tab: (el) => showTab(el.dataset.tab),
+  draw: () => startDraw(),
+  'first-add': () => { showTab('library'); openTitleSheet(); },
+  'goto-todo': () => { ui.commentsFilter = 'todo'; showTab('comments'); },
+  note: (el) => {
+    if (ui.play.state !== 'active') return;
+    const n = Number(el.dataset.n);
+    ui.play.note = n;
+    $$('.gbtn', $('#view-play')).forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.n) === n)));
+    $('#validateBtn').disabled = false;
+  },
+  validate: () => validatePlay(),
+  'metro-toggle': () => { if (ui.play.state === 'active') { Metro.setBpm(ui.play.bpm); Metro.toggle(ui.play.bpm); } },
+  'bpm-reset': () => { const t = getTitle(ui.play.titleId); if (t) setPlayBpm(t.tempo); },
+  'bpm-save': async () => {
+    const t = getTitle(ui.play.titleId); if (!t) return;
+    const b = ui.play.bpm;
+    const ok = await confirmSheet({ title: `Enregistrer ${b} BPM comme tempo de « ${t.name} » ?`, message: `Le tempo enregistré passera de ${t.tempo} à ${b} BPM.`, confirmLabel: 'Enregistrer', danger: false });
+    if (!ok) return;
+    t.tempo = b; save();
+    const meta = $('#view-play .song-meta .tempo'); if (meta) meta.textContent = `♩ = ${b}`;
+    updateMetroUI();
+    showToast({ tone: 'x', icon: 'check', title: 'Tempo enregistré', sub: `${t.name} · ♩ = ${b}` });
+  },
+  'comment-toggle': (el) => toggleComment(el.dataset.id),
+  'comment-edit': (el) => openCommentSheet({ commentId: el.dataset.id }),
+  'comment-delete': (el) => deleteComment(el.dataset.id),
+  'comment-new': () => openCommentSheet(),
+  'comment-new-for': (el) => openCommentSheet({ titleId: el.dataset.id }),
+  'comments-filter': (el) => { ui.commentsFilter = el.dataset.f; renderComments(); },
+  'title-new': () => openTitleSheet(),
+  'title-edit': (el) => openTitleSheet(el.dataset.id),
+  'title-delete': (el) => deleteTitle(el.dataset.id),
+  'open-fiche': (el) => { ui.lib.view = 'fiche'; ui.lib.ficheId = el.dataset.id; ui.lib.histAll = false; renderLibrary(); $('#view-library').scrollTop = 0; },
+  'open-fiche-from-stats': (el) => { ui.lib.view = 'fiche'; ui.lib.ficheId = el.dataset.id; ui.lib.histAll = false; showTab('library', { keepLib: true, keepScroll: true }); $('#view-library').scrollTop = 0; },
+  'lib-back': () => { ui.lib.view = 'list'; ui.lib.ficheId = null; renderLibrary(); },
+  'hist-toggle': () => { ui.lib.histAll = !ui.lib.histAll; renderFiche(); },
+  'play-title': (el) => { const id = el.dataset.id; db.meta.lastDrawnTitleId = id; save(); showTab('play'); startPlaying(id); },
+  'lib-data': () => { const s = $('#reglages'); if (s) s.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+  'set-theme': (el) => {
+    db.meta.theme = el.dataset.theme; save(); applyTheme();
+    $$('[data-action="set-theme"]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === db.meta.theme)));
+  },
+  export: () => exportData(),
+  import: () => $('#importFile').click(),
+  'stats-sort': (el) => { ui.statsSort = el.dataset.s; renderStats(); },
+};
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.ov, .cele-ov')) return; // gérés par leurs propres écouteurs
+  const el = e.target.closest('[data-action]');
+  const wrap = e.target.closest('.rwrap.swipeable');
+  if (Date.now() < suppressClickUntil && wrap) return;
+  if (wrap && wrap.classList.contains('open') && !e.target.closest('.swdel')) { closeSwipes(); return; }
+  if (!e.target.closest('.rwrap.open')) closeSwipes();
+  if (!el || el.disabled) return;
+  const fn = actions[el.dataset.action];
+  if (fn) fn(el, e);
+});
+
+/* Appui maintenu (−/+ du métronome et du formulaire) */
+const holdHandlers = {
+  bpm: (b) => setPlayBpm(ui.play.bpm + Number(b.dataset.step)),
+  ftempo: (b) => {
+    const inp = $('#fTempo'); if (!inp) return;
+    const cur = Number(inp.value);
+    inp.value = clampTempo((Number.isFinite(cur) && inp.value !== '' ? cur : CONFIG.TEMPO_DEFAULT) + Number(b.dataset.step));
+    const echo = $('#fTempoEcho'); if (echo) echo.textContent = inp.value;
+  },
+};
+document.addEventListener('pointerdown', (e) => {
+  const b = e.target.closest('[data-hold]'); if (!b || b.disabled) return;
+  e.preventDefault();
+  const fn = () => holdHandlers[b.dataset.hold](b);
+  fn();
+  let timer = setTimeout(function rep() { fn(); timer = setTimeout(rep, 70); }, 420);
+  const stop = () => { clearTimeout(timer); window.removeEventListener('pointerup', stop); window.removeEventListener('pointercancel', stop); b.removeEventListener('pointerleave', stop); };
+  window.addEventListener('pointerup', stop); window.addEventListener('pointercancel', stop); b.addEventListener('pointerleave', stop);
+});
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-hold]'); if (b && e.detail === 0) holdHandlers[b.dataset.hold](b); });
+
+/* Balayage pour supprimer un commentaire */
+let sw = null;
+function closeSwipes(except) { $$('.rwrap.open').forEach((w) => { if (w !== except) w.classList.remove('open'); }); }
+document.addEventListener('touchstart', (e) => {
+  const row = e.target.closest('.rwrap.swipeable .crow');
+  if (!row) { sw = null; return; }
+  const wrap = row.parentElement;
+  closeSwipes(wrap);
+  sw = { row, wrap, x: e.touches[0].clientX, y: e.touches[0].clientY, base: wrap.classList.contains('open') ? -96 : 0, cur: 0, active: false, decided: false };
+}, { passive: true });
+document.addEventListener('touchmove', (e) => {
+  if (!sw) return;
+  const dx = e.touches[0].clientX - sw.x, dy = e.touches[0].clientY - sw.y;
+  if (!sw.decided && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) { sw.decided = true; sw.active = Math.abs(dx) > Math.abs(dy); }
+  if (!sw.active) return;
+  e.preventDefault();
+  sw.cur = Math.min(0, Math.max(-130, sw.base + dx));
+  sw.row.style.transition = 'none';
+  sw.row.style.transform = `translateX(${sw.cur}px)`;
+}, { passive: false });
+document.addEventListener('touchend', () => {
+  if (!sw) return;
+  if (sw.active) {
+    sw.row.style.transition = ''; sw.row.style.transform = '';
+    sw.wrap.classList.toggle('open', sw.cur < -48);
+    suppressClickUntil = Date.now() + 350;
+  }
+  sw = null;
+});
+
+/* Clavier : masquer barre d'onglets et dock pendant la saisie */
+document.addEventListener('focusin', (e) => { if (e.target.matches('#view-play textarea, #view-library input[type=search]')) document.body.classList.add('typing'); });
+document.addEventListener('focusout', () => setTimeout(() => { if (!document.activeElement || !document.activeElement.matches('#view-play textarea, #view-library input[type=search]')) document.body.classList.remove('typing'); }, 50));
+
+/* =========================================================
+   Démarrage
+   ========================================================= */
+renderTabbar();
+showTab('play');
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+// Accès console pour tester ou régler l'algorithme
+window.SaxTrainer = { CONFIG, computeWeights, pickWeighted, get db() { return db; } };
+</script>
+</body>
+</html>
