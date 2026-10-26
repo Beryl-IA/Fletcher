@@ -8,7 +8,7 @@
 | `manifest.webmanifest` | Nom, couleurs, mode plein écran, portrait |
 | `sw.js` | Service worker : cache hors ligne (cache-first, versionné) |
 | `icon-180.png`, `icon-192.png`, `icon-512.png` | Icônes (déjà générées) |
-| `icon.svg` | Source de l'icône, si tu veux la modifier |
+| `icon-source.png` | Image source de l'icône (1024 px, sans coins arrondis) |
 
 ## 1. Héberger (gratuit, HTTPS)
 
@@ -35,4 +35,4 @@
 - **Tes données restent sur le téléphone**, liées à l'appli installée. Si tu la supprimes de l'écran d'accueil, elles sont effacées. Fais un **export** de temps en temps (Bibliothèque → Données → Exporter → « Enregistrer dans Fichiers » / iCloud). L'appli te le rappelle après 30 jours sans export.
 - **Mettre à jour l'appli** : modifie les fichiers, change `VERSION` dans `sw.js` (ex. `'v2'`), puis redépose le dossier. Ferme et relance l'appli deux fois pour voir la nouvelle version.
 - **Régler le tirage** : les constantes (15, 11, 0,5, 30) sont dans l'objet `CONFIG` en haut du script de `index.html`. La fonction `computeWeights` se teste dans la console : `SaxTrainer.computeWeights(...)`.
-- **Modifier l'icône** : édite `icon.svg`, puis exporte-le en PNG 180, 192 et 512 px (par ex. sur https://svgtopng.com ou avec `rsvg-convert -w 180 icon.svg -o icon-180.png`).
+- **Modifier l'icône** : remplace `icon-source.png` (carré, 1024 px) puis régénère `icon-180.png`, `icon-192.png` et `icon-512.png`. Sur iPhone, il faut supprimer l'appli de l'écran d'accueil et la rajouter pour voir la nouvelle icône (fais un export avant).

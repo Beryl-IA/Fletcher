@@ -1,6 +1,6 @@
 /* Sax Trainer — service worker (cache-first, versionné).
    Pour publier une mise à jour : modifier les fichiers puis incrémenter VERSION. */
-const VERSION = 'v4';
+const VERSION = 'v5';
 const CACHE = 'saxtrainer-' + VERSION;
 const ASSETS = [
   './',
