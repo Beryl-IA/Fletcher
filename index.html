@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sax Trainer</title>
-<meta name="description" content="Tirage au sort pondéré de tes morceaux de saxophone, métronome et suivi des notes.">
+<meta name="description" content="Tirage au sort pondéré de tes morceaux de saxophone et suivi des notes.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -25,7 +25,7 @@
   --bg:#F3EADA;--surf:#FBF6EC;--surf2:#E5D3AF;--surf3:#D4BF96;--seg-on:#FBF6EC;--sep:#DCCBA8;
   --tx:#2A1716;--tx2:#5A4A3C;--tx3:#6E5D4C;
   --acc:#790D16;--acc-tx:#790D16;--acc-ink:#F7EEDC;--acc-soft:rgba(121,13,22,.10);
-  --ring1:rgba(121,13,22,.12);--ring2:rgba(121,13,22,.05);--flash:#790D16;
+  --ring1:rgba(121,13,22,.12);--ring2:rgba(121,13,22,.05);
   --ok:#186049;--ok-tx:#186049;
   --bar:#FBF6EC;--toast:#FBF6EC;--sheet:#FBF6EC;
   --danger:#B3261E;--danger-fill:#B3261E;--scrim:rgba(42,23,22,.42);--shadow:0 16px 40px rgba(60,30,10,.2);
@@ -43,7 +43,7 @@
     --bg:#1E1513;--surf:#2B201D;--surf2:#3B2D28;--surf3:#54423A;--seg-on:#5E4A41;--sep:#3E302A;
     --tx:#F3EADA;--tx2:#CDBBA3;--tx3:#A8937E;
     --acc:#A11B27;--acc-tx:#F2959A;--acc-ink:#F7EEDC;--acc-soft:rgba(242,149,154,.13);
-    --ring1:rgba(201,48,60,.24);--ring2:rgba(201,48,60,.10);--flash:#E3505B;
+    --ring1:rgba(201,48,60,.24);--ring2:rgba(201,48,60,.10);
     --ok:#3A9C78;--ok-tx:#74CFA5;
     --bar:#241A17;--toast:#33271F;--sheet:#2B201D;
     --danger:#FF7A6E;--danger-fill:#C7372B;--scrim:rgba(0,0,0,.55);--shadow:0 16px 40px rgba(0,0,0,.55);
@@ -57,7 +57,7 @@
     --bg:#1E1513;--surf:#2B201D;--surf2:#3B2D28;--surf3:#54423A;--seg-on:#5E4A41;--sep:#3E302A;
     --tx:#F3EADA;--tx2:#CDBBA3;--tx3:#A8937E;
     --acc:#A11B27;--acc-tx:#F2959A;--acc-ink:#F7EEDC;--acc-soft:rgba(242,149,154,.13);
-    --ring1:rgba(201,48,60,.24);--ring2:rgba(201,48,60,.10);--flash:#E3505B;
+    --ring1:rgba(201,48,60,.24);--ring2:rgba(201,48,60,.10);
     --ok:#3A9C78;--ok-tx:#74CFA5;
     --bar:#241A17;--toast:#33271F;--sheet:#2B201D;
     --danger:#FF7A6E;--danger-fill:#C7372B;--scrim:rgba(0,0,0,.55);--shadow:0 16px 40px rgba(0,0,0,.55);
@@ -193,25 +193,7 @@ body.typing .view{bottom:0}
 .song-title{font-size:40px;line-height:44px;font-weight:800;letter-spacing:-.025em;overflow-wrap:anywhere}
 .song-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:15px;color:var(--tx2)}
 .song-meta .tempo{font-size:21px;font-weight:700;color:var(--tx)}
-.metro{padding:12px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .06s linear}
-.metro.flash{box-shadow:inset 0 0 0 2px var(--flash),0 0 28px var(--acc-soft)}
-.metro-top{display:flex;align-items:center;gap:14px}
-.play{width:68px;height:68px;border-radius:34px;border:0;padding:0;background:var(--acc);color:var(--acc-ink);display:flex;align-items:center;justify-content:center;flex:none}
-.play .icf{width:30px;height:30px}
-.bpm{flex:1;display:flex;align-items:baseline;gap:6px;min-width:0}
-.bpm-val{font-size:50px;line-height:54px;font-weight:700;letter-spacing:-.02em}
-.bpm-unit{font-size:14px;font-weight:600;color:var(--tx2)}
-.beats{display:flex;align-items:center;gap:9px;padding-right:4px}
-.beat{width:13px;height:13px;border-radius:7px;background:var(--surf3);transition:background .06s,box-shadow .06s}
-.beat.first{width:17px;height:17px;border-radius:9px}
-.beat.on{background:var(--flash);box-shadow:0 0 0 4px var(--acc-soft),0 0 18px var(--flash)}
-.metro-ctrl{display:flex;align-items:center;gap:6px}
-.step{width:48px;height:44px;border:0;border-radius:12px;background:var(--surf2);color:var(--tx);font-size:16px;font-weight:700;flex:none;padding:0;touch-action:manipulation}
-.step:active,.bigstep:active{filter:brightness(.92)}
-.rng{flex:1;min-width:0;height:44px;margin:0;accent-color:var(--acc)}
-.metro-mod{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--sep);margin:0 -2px -8px}
-.metro-mod .lnk{font-size:14px}
-.metro-mod .lnk .ic{width:17px;height:17px}
+.bigstep:active{filter:brightness(.92)}
 .todo-sec{padding:0 4px;display:flex;flex-direction:column}
 .todo-sec .sec{margin-bottom:2px}
 .todo-row{display:flex;align-items:center;gap:2px;margin-left:-10px;min-height:44px}
@@ -302,7 +284,7 @@ body.typing .dock{display:none}
 .cline{fill:none;stroke:var(--tx3);stroke-width:2;stroke-linejoin:round}
 .cdot{fill:var(--t-solid);stroke:var(--surf);stroke-width:2.5}
 .ctx{fill:var(--tx3);font-size:11px;font-weight:600;font-family:var(--font)}
-.hrow{display:grid;grid-template-columns:minmax(0,1fr) auto 84px;align-items:center;gap:12px;height:50px;padding:0 16px}
+.hrow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;height:50px;padding:0 16px}
 .hrow + .hrow{border-top:1px solid var(--sep)}
 .arow{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:0 16px;border:0;background:transparent;color:var(--tx);font-size:17px;text-align:left}
 .arow.sep{border-top:1px solid var(--sep)}
@@ -408,12 +390,6 @@ const CONFIG = {
   TEMPO_DEFAULT: 100,
   NAME_MAX: 80,
   EXPORT_REMINDER_DAYS: 30,
-  CLICK_FREQ: 1000,          // Hz
-  CLICK_DURATION: 0.03,      // s
-  CLICK_GAIN: 0.45,
-  SCHEDULER_MS: 25,          // période du minuteur d'ordonnancement
-  SCHEDULE_AHEAD: 0.1,       // s planifiées à l'avance
-  FLASH_DURATION: 0.1,       // s
   DRAW_ANIM_MS: 850,
   HISTORY_PREVIEW: 5,
   CHART_MAX_POINTS: 20,
@@ -498,8 +474,7 @@ function normalizeDb(d) {
     if (!s || !ids.has(s.titleId) || !validIso(s.date)) continue;
     const note = Number(s.note);
     if (!Number.isInteger(note) || note < 0 || note > 10) continue;
-    const tu = Number(s.tempoUsed);
-    out.sessions.push({ id: typeof s.id === 'string' ? s.id : uuid(), titleId: s.titleId, note, tempoUsed: Number.isFinite(tu) ? clampTempo(tu) : null, date: s.date });
+    out.sessions.push({ id: typeof s.id === 'string' ? s.id : uuid(), titleId: s.titleId, note, date: s.date });
   }
   for (const c of (Array.isArray(d.comments) ? d.comments : [])) {
     if (!c || !ids.has(c.titleId) || typeof c.text !== 'string' || !c.text.trim()) continue;
@@ -636,101 +611,6 @@ const ui = {
 };
 
 /* =========================================================
-   Métronome — Web Audio, ordonnancement « lookahead »
-   ========================================================= */
-const Metro = {
-  ctx: null, playing: false, bpm: 120, nextTime: 0, beat: 0, timer: null, raf: 0,
-  queue: [], nodes: [], flashOffAt: 0, wake: null, onChange: null,
-
-  ensureContext() {
-    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
-    if (!this.ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      this.ctx = new AC({ latencyHint: 'interactive' });
-    }
-    if (this.ctx.state !== 'running') { try { this.ctx.resume(); } catch (e) {} }
-    return this.ctx;
-  },
-  start(bpm) {
-    if (this.playing) return;
-    const ctx = this.ensureContext();
-    if (!ctx) { showToast({ tone: 'r', icon: 'warn', title: 'Audio indisponible', sub: 'Ce navigateur ne gère pas Web Audio.' }); return; }
-    this.bpm = bpm; this.playing = true; this.beat = 0; this.queue = [];
-    this.nextTime = ctx.currentTime + 0.08;
-    this.schedule();
-    this.timer = setInterval(() => this.schedule(), CONFIG.SCHEDULER_MS);
-    const loop = () => { if (!this.playing) return; this.draw(); this.raf = requestAnimationFrame(loop); };
-    this.raf = requestAnimationFrame(loop);
-    this.lockScreen();
-    if (this.onChange) this.onChange();
-  },
-  stop() {
-    if (!this.playing) return;
-    this.playing = false;
-    clearInterval(this.timer); this.timer = null;
-    cancelAnimationFrame(this.raf);
-    this.queue = [];
-    const now = this.ctx ? this.ctx.currentTime : 0;
-    for (const n of this.nodes) if (n.t > now) { try { n.osc.stop(); n.osc.disconnect(); } catch (e) {} }
-    this.nodes = [];
-    this.flashOffAt = 0; setFlash(-1);
-    this.releaseScreen();
-    if (this.onChange) this.onChange();
-  },
-  toggle(bpm) { this.playing ? this.stop() : this.start(bpm); },
-  setBpm(b) { this.bpm = b; },
-  schedule() {
-    const ctx = this.ctx;
-    if (this.nextTime < ctx.currentTime - 0.05) this.nextTime = ctx.currentTime + 0.05; // rattrapage
-    while (this.nextTime < ctx.currentTime + CONFIG.SCHEDULE_AHEAD) {
-      this.click(this.nextTime);
-      this.queue.push({ time: this.nextTime, beat: this.beat });
-      this.nextTime += 60 / this.bpm;
-      this.beat = (this.beat + 1) % 4;
-    }
-    this.nodes = this.nodes.filter((n) => n.t > ctx.currentTime - 0.2);
-  },
-  click(t) {
-    const ctx = this.ctx;
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(CONFIG.CLICK_FREQ, t);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(CONFIG.CLICK_GAIN, t + 0.002);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + CONFIG.CLICK_DURATION);
-    osc.connect(g); g.connect(ctx.destination);
-    osc.start(t); osc.stop(t + CONFIG.CLICK_DURATION + 0.01);
-    this.nodes.push({ osc, t });
-  },
-  draw() {
-    const ctx = this.ctx;
-    const heard = ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0);
-    let fired = null;
-    while (this.queue.length && this.queue[0].time <= heard) fired = this.queue.shift();
-    if (fired) { setFlash(fired.beat); this.flashOffAt = fired.time + CONFIG.FLASH_DURATION; }
-    else if (this.flashOffAt && heard >= this.flashOffAt) { setFlash(-1); this.flashOffAt = 0; }
-  },
-  async lockScreen() {
-    try { if ('wakeLock' in navigator) this.wake = await navigator.wakeLock.request('screen'); } catch (e) { this.wake = null; }
-  },
-  releaseScreen() {
-    try { if (this.wake) this.wake.release(); } catch (e) {}
-    this.wake = null;
-  },
-};
-function setFlash(beat) {
-  const card = document.getElementById('metro');
-  if (!card) return;
-  card.classList.toggle('flash', beat >= 0);
-  $$('.beat', card).forEach((el, i) => el.classList.toggle('on', i === beat));
-}
-Metro.onChange = () => updateMetroUI();
-document.addEventListener('visibilitychange', () => { if (document.hidden) Metro.stop(); });
-window.addEventListener('pagehide', () => Metro.stop());
-
-/* =========================================================
    Barre d'onglets & navigation
    ========================================================= */
 const TABS = [
@@ -743,7 +623,6 @@ function renderTabbar() {
   $('#tabbar').innerHTML = TABS.map((t) => `<button class="tab" data-action="tab" data-tab="${t.id}"${ui.tab === t.id ? ' aria-current="page"' : ''}>${ic(t.icon)}<span>${t.label}</span></button>`).join('');
 }
 function showTab(id, opts = {}) {
-  if (id !== ui.tab) Metro.stop();
   const same = id === ui.tab;
   ui.tab = id;
   if (id === 'library' && same && !opts.keepLib) { ui.lib.view = 'list'; ui.lib.ficheId = null; }
@@ -817,24 +696,6 @@ function renderPlay() {
         <h1 class="song-title">${esc(t.name)}</h1>
         <div class="song-meta"><span class="num tempo">♩ = ${t.tempo}</span><span class="dot-sep"></span>${lastLine}</div>
       </div>
-      <section class="card metro" id="metro" aria-label="Métronome">
-        <div class="metro-top">
-          <button class="play" id="metroPlay" data-action="metro-toggle" aria-label="Lancer le métronome">${icf('play')}</button>
-          <div class="bpm"><span class="num bpm-val" id="bpmVal">${p.bpm}</span><span class="bpm-unit">BPM</span></div>
-          <div class="beats" aria-hidden="true"><span class="beat first"></span><span class="beat"></span><span class="beat"></span><span class="beat"></span></div>
-        </div>
-        <div class="metro-ctrl">
-          <button class="step num" data-hold="bpm" data-step="-5" aria-label="Moins 5 BPM">−5</button>
-          <button class="step num" data-hold="bpm" data-step="-1" aria-label="Moins 1 BPM">−1</button>
-          <input class="rng" id="bpmRange" type="range" min="${CONFIG.TEMPO_MIN}" max="${CONFIG.TEMPO_MAX}" step="1" value="${p.bpm}" aria-label="Tempo">
-          <button class="step num" data-hold="bpm" data-step="1" aria-label="Plus 1 BPM">+1</button>
-          <button class="step num" data-hold="bpm" data-step="5" aria-label="Plus 5 BPM">+5</button>
-        </div>
-        <div class="metro-mod" id="metroMod" hidden>
-          <button class="lnk" data-action="bpm-reset" style="padding-left:2px">${ic('reset')}<span id="bpmResetLbl">Tempo du morceau</span></button>
-          <button class="lnk" data-action="bpm-save" style="padding-right:2px;color:var(--tx2)">Enregistrer ce tempo</button>
-        </div>
-      </section>
       ${todos.length ? `<section class="todo-sec"><h2 class="sec">À faire sur ce morceau</h2>
         ${todos.map((c) => `<div class="todo-row${c.done ? ' is-done' : ''}" data-cid="${c.id}">
           <button class="chk" data-action="comment-toggle" data-id="${c.id}" aria-label="${c.done ? 'Marquer comme à faire' : 'Marquer comme fait'}"><span>${ic('check')}</span></button>
@@ -850,35 +711,13 @@ function renderPlay() {
   const ta = $('#playComment');
   autoGrow(ta);
   ta.addEventListener('input', () => { ui.play.comment = ta.value; autoGrow(ta); });
-  $('#bpmRange').addEventListener('input', (e) => setPlayBpm(Number(e.target.value)));
-  updateMetroUI();
 }
 function autoGrow(ta) { ta.style.height = 'auto'; ta.style.height = Math.min(Math.max(ta.scrollHeight, 66), 180) + 'px'; }
 
-function updateMetroUI() {
-  if (ui.play.state !== 'active') return;
-  const t = getTitle(ui.play.titleId); if (!t) return;
-  const btn = $('#metroPlay'); if (!btn) return;
-  btn.innerHTML = Metro.playing ? icf('pause') : icf('play');
-  btn.setAttribute('aria-label', Metro.playing ? 'Arrêter le métronome' : 'Lancer le métronome');
-  $('#bpmVal').textContent = ui.play.bpm;
-  const r = $('#bpmRange'); if (Number(r.value) !== ui.play.bpm) r.value = ui.play.bpm;
-  const mod = ui.play.bpm !== t.tempo;
-  $('#metroMod').hidden = !mod;
-  $('#bpmResetLbl').textContent = `Tempo du morceau (${t.tempo})`;
-}
-function setPlayBpm(b) {
-  if (ui.play.state !== 'active') return;
-  ui.play.bpm = clampTempo(b);
-  Metro.setBpm(ui.play.bpm);
-  updateMetroUI();
-}
-
 function startPlaying(id) {
   const t = getTitle(id); if (!t) return;
-  Metro.stop();
   ui.play = {
-    state: 'active', titleId: id, bpm: t.tempo, note: null, comment: '',
+    state: 'active', titleId: id, note: null, comment: '',
     todoIds: openComments(id).sort(byNewest).map((c) => c.id),
   };
   renderPlay();
@@ -887,7 +726,6 @@ function startPlaying(id) {
 let drawTimers = [];
 function startDraw() {
   if (ui.play.state === 'drawing' || !db.titles.length) return;
-  Metro.stop();
   const weights = computeWeights(db.titles, db.sessions, db.meta.lastDrawnTitleId, new Date());
   const id = pickWeighted(weights);
   if (!id) return;
@@ -947,12 +785,11 @@ function validatePlay() {
   const t = getTitle(p.titleId); if (!t) return;
   const prevLast = indexStats().get(t.id).last;
   const now = new Date().toISOString();
-  db.sessions.push({ id: uuid(), titleId: t.id, note: p.note, tempoUsed: p.bpm, date: now });
+  db.sessions.push({ id: uuid(), titleId: t.id, note: p.note, date: now });
   const text = (p.comment || '').trim();
   if (text) db.comments.push({ id: uuid(), titleId: t.id, text, createdAt: now, done: false, doneAt: null });
   save();
-  Metro.stop();
-  const note = p.note, bpm = p.bpm;
+  const note = p.note;
   ui.play = { state: 'idle' };
   document.body.classList.remove('typing');
   renderPlay();
@@ -963,7 +800,7 @@ function validatePlay() {
   } else if (note === 10) {
     showToast({ tone: 'x', icon: 'star', ring: true, title: '10/10', sub: `${t.name} · ${done} / ${total} titres à 10` });
   } else {
-    showToast({ tone: tone(note), icon: 'check', title: `Noté ${note}/10`, sub: `${t.name} · ♩ = ${bpm}${text ? ' · 1 commentaire ajouté' : ''}` });
+    showToast({ tone: tone(note), icon: 'check', title: `Noté ${note}/10`, sub: `${t.name}${text ? ' · 1 commentaire ajouté' : ''}` });
   }
 }
 
@@ -1190,9 +1027,9 @@ function renderFiche() {
         <div class="card" style="padding:16px 16px 12px">${evolutionChart(t, st.sessions)}</div>
       </section>
       <section class="fsec">
-        <div class="fsec-h"><h2 class="sec">Historique</h2><span>tempo joué</span></div>
+        <div class="fsec-h"><h2 class="sec">Historique</h2></div>
         <div class="card">
-          ${shown.map((s) => `<div class="hrow"><span style="font-size:16px">${fmtShort(s.date)}</span>${pill(s.note)}<span class="num" style="font-size:15px;color:var(--tx2);text-align:right">${s.tempoUsed ? '♩ ' + s.tempoUsed : '–'}</span></div>`).join('')}
+          ${shown.map((s) => `<div class="hrow"><span style="font-size:16px">${fmtShort(s.date)}</span>${pill(s.note)}</div>`).join('')}
           ${hist.length > CONFIG.HISTORY_PREVIEW ? `<button class="arow sep accent center" data-action="hist-toggle" style="min-height:48px">${ui.lib.histAll ? 'Réduire' : `Tout afficher (${hist.length})`}</button>` : ''}
         </div>
       </section>` : ''}
@@ -1268,7 +1105,6 @@ function openTitleSheet(id = null) {
       const tempo = Number.isFinite(raw) && $('#fTempo', root).value !== '' ? clampTempo(raw) : (t ? t.tempo : CONFIG.TEMPO_DEFAULT);
       if (t) {
         t.name = name; t.tempo = tempo;
-        if (ui.play.state === 'active' && ui.play.titleId === t.id && !Metro.playing) ui.play.bpm = tempo;
         save(); renderCurrent();
         showToast({ tone: 'x', icon: 'check', title: 'Morceau modifié', sub: `${name} · ♩ = ${tempo}` });
       } else {
@@ -1295,7 +1131,7 @@ async function deleteTitle(id) {
   db.sessions = db.sessions.filter((s) => s.titleId !== id);
   db.comments = db.comments.filter((c) => c.titleId !== id);
   if (db.meta.lastDrawnTitleId === id) db.meta.lastDrawnTitleId = null;
-  if (ui.play.titleId === id) { Metro.stop(); ui.play = { state: 'idle' }; }
+  if (ui.play.titleId === id) ui.play = { state: 'idle' };
   save();
   ui.lib.view = 'list'; ui.lib.ficheId = null;
   renderLibrary();
@@ -1342,7 +1178,6 @@ async function importFile(file) {
     confirmLabel: 'Remplacer', icon: 'import',
   });
   if (!ok) return;
-  Metro.stop();
   db = data;
   save();
   applyTheme();
@@ -1511,18 +1346,6 @@ const actions = {
     $('#validateBtn').disabled = false;
   },
   validate: () => validatePlay(),
-  'metro-toggle': () => { if (ui.play.state === 'active') { Metro.setBpm(ui.play.bpm); Metro.toggle(ui.play.bpm); } },
-  'bpm-reset': () => { const t = getTitle(ui.play.titleId); if (t) setPlayBpm(t.tempo); },
-  'bpm-save': async () => {
-    const t = getTitle(ui.play.titleId); if (!t) return;
-    const b = ui.play.bpm;
-    const ok = await confirmSheet({ title: `Enregistrer ${b} BPM comme tempo de « ${t.name} » ?`, message: `Le tempo enregistré passera de ${t.tempo} à ${b} BPM.`, confirmLabel: 'Enregistrer', danger: false });
-    if (!ok) return;
-    t.tempo = b; save();
-    const meta = $('#view-play .song-meta .tempo'); if (meta) meta.textContent = `♩ = ${b}`;
-    updateMetroUI();
-    showToast({ tone: 'x', icon: 'check', title: 'Tempo enregistré', sub: `${t.name} · ♩ = ${b}` });
-  },
   'comment-toggle': (el) => toggleComment(el.dataset.id),
   'comment-edit': (el) => openCommentSheet({ commentId: el.dataset.id }),
   'comment-delete': (el) => deleteComment(el.dataset.id),
@@ -1558,9 +1381,8 @@ document.addEventListener('click', (e) => {
   if (fn) fn(el, e);
 });
 
-/* Appui maintenu (−/+ du métronome et du formulaire) */
+/* Appui maintenu (− / + du tempo dans le formulaire) */
 const holdHandlers = {
-  bpm: (b) => setPlayBpm(ui.play.bpm + Number(b.dataset.step)),
   ftempo: (b) => {
     const inp = $('#fTempo'); if (!inp) return;
     const cur = Number(inp.value);

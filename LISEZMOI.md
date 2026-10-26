@@ -30,7 +30,6 @@
 ## Bon à savoir
 
 - **Tes données restent sur le téléphone**, liées à l'appli installée. Si tu la supprimes de l'écran d'accueil, elles sont effacées. Fais un **export** de temps en temps (Bibliothèque → Données → Exporter → « Enregistrer dans Fichiers » / iCloud). L'appli te le rappelle après 30 jours sans export.
-- **Le métronome marche aussi en mode silencieux.** Si tu n'entends rien, monte le volume « média » de l'iPhone.
 - **Mettre à jour l'appli** : modifie les fichiers, change `VERSION` dans `sw.js` (ex. `'v2'`), puis redépose le dossier. Ferme et relance l'appli deux fois pour voir la nouvelle version.
 - **Régler le tirage** : les constantes (15, 11, 0,5, 30) sont dans l'objet `CONFIG` en haut du script de `index.html`. La fonction `computeWeights` se teste dans la console : `SaxTrainer.computeWeights(...)`.
 - **Modifier l'icône** : édite `icon.svg`, puis exporte-le en PNG 180, 192 et 512 px (par ex. sur https://svgtopng.com ou avec `rsvg-convert -w 180 icon.svg -o icon-180.png`).

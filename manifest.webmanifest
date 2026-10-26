@@ -1,7 +1,7 @@
 {
   "name": "Sax Trainer",
   "short_name": "Sax Trainer",
-  "description": "Tirage au sort pondéré de tes morceaux, métronome et suivi des notes jusqu'à 10/10.",
+  "description": "Tirage au sort pondéré de tes morceaux, et suivi des notes jusqu'à 10/10.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
