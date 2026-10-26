@@ -29,6 +29,9 @@
 
 ## Bon à savoir
 
+- **Partitions PDF** : sur la fiche d'un morceau, « Ajouter la partition (PDF) ». Elle s'ouvre ensuite depuis la fiche ou depuis l'écran Jouer, avec zoom au pincement ou au double-tap, hors ligne. Les PDF sont inclus dans l'export (le fichier est plus gros), et l'import les restaure.
+- Le dossier `vendor/` contient PDF.js (lecteur PDF, licence Apache 2.0) : ne pas le supprimer.
+
 - **Tes données restent sur le téléphone**, liées à l'appli installée. Si tu la supprimes de l'écran d'accueil, elles sont effacées. Fais un **export** de temps en temps (Bibliothèque → Données → Exporter → « Enregistrer dans Fichiers » / iCloud). L'appli te le rappelle après 30 jours sans export.
 - **Mettre à jour l'appli** : modifie les fichiers, change `VERSION` dans `sw.js` (ex. `'v2'`), puis redépose le dossier. Ferme et relance l'appli deux fois pour voir la nouvelle version.
 - **Régler le tirage** : les constantes (15, 11, 0,5, 30) sont dans l'objet `CONFIG` en haut du script de `index.html`. La fonction `computeWeights` se teste dans la console : `SaxTrainer.computeWeights(...)`.

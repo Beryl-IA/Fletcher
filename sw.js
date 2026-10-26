@@ -1,6 +1,6 @@
 /* Sax Trainer — service worker (cache-first, versionné).
    Pour publier une mise à jour : modifier les fichiers puis incrémenter VERSION. */
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = 'saxtrainer-' + VERSION;
 const ASSETS = [
   './',
@@ -9,6 +9,8 @@ const ASSETS = [
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
+  './vendor/pdf.min.mjs',
+  './vendor/pdf.worker.min.mjs',
 ];
 
 self.addEventListener('install', (event) => {

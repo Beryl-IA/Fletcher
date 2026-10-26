@@ -354,6 +354,21 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--tx2) 50%
 .asbtn .ic{width:22px;height:22px}
 .asbtn.cancel{border-top:0;border-radius:18px;background:var(--sheet);color:var(--tx)}
 
+/* Visionneuse de partition */
+.viewer{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;opacity:0;transition:opacity .2s ease}
+.viewer.show{opacity:1}
+.v-bar{flex:none;display:flex;align-items:center;gap:2px;padding:calc(env(safe-area-inset-top) + 4px) max(6px,env(safe-area-inset-right)) 4px max(16px,env(safe-area-inset-left));border-bottom:1px solid var(--sep);background:var(--bar)}
+.v-title{flex:1;min-width:0;font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v-scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;overscroll-behavior:contain;padding:12px 0 calc(var(--safe-b) + 12px)}
+.v-pages{width:calc(var(--z,1) * 100%);display:flex;flex-direction:column;gap:12px;padding:0 12px}
+.v-pages canvas{display:block;width:100%;height:auto;background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.22)}
+.v-msg{padding:48px 24px;text-align:center;color:var(--tx2);font-size:16px;line-height:23px}
+.srow-sub .ic{width:14px;height:14px;vertical-align:-2px;margin-left:6px;color:var(--tx3)}
+.score-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.score-meta b{font-size:17px;line-height:22px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score-meta small{font-size:13px;color:var(--tx3)}
+body.viewer-open .landscape{display:none!important}
+
 /* Paysage : l'appli est pensée pour le portrait */
 .landscape{display:none}
 @media (orientation:landscape) and (max-height:500px){
@@ -373,6 +388,7 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--tx2) 50%
 <div id="overlays"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <input type="file" id="importFile" accept=".json,application/json" hidden>
+<input type="file" id="scoreFile" accept="application/pdf,.pdf" hidden>
 <div class="landscape" aria-hidden="true">Tourne ton iPhone en mode portrait 🎷</div>
 
 <script>
@@ -587,6 +603,7 @@ const IC = {
   reset: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v3.7h3.7"/>',
   sliders: '<path d="M4 7.5h9M17.5 7.5H20M4 16.5h3.5M11.5 16.5H20"/><circle cx="15.3" cy="7.5" r="2.2"/><circle cx="9.5" cy="16.5" r="2.2"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+  doc: '<path d="M7 3.5h7l4 4V20.5H7z"/><path d="M14 3.5V8h4"/><path d="M9.5 13h5M9.5 16.5h5"/>',
   music: '<path d="M9 17.2V6.2l10-2.2v11"/><circle cx="6.8" cy="17.2" r="2.3"/><circle cx="16.8" cy="15" r="2.3"/><path d="M9 9.6l10-2.2"/>',
 };
 const ICF = {
@@ -609,6 +626,182 @@ const ui = {
   lib: { view: 'list', ficheId: null, search: '', histAll: false },
   statsSort: 'note',                // note | name
 };
+
+/* =========================================================
+   Partitions PDF — stockées dans IndexedDB (une par morceau)
+   ========================================================= */
+const SCORE_MAX_BYTES = 25 * 1024 * 1024;
+const ScoreStore = {
+  _db: null, meta: new Map(),
+  open() {
+    if (!this._db) this._db = new Promise((res, rej) => {
+      if (!window.indexedDB) return rej(new Error('IndexedDB indisponible'));
+      const r = indexedDB.open('saxtrainer-files', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('scores');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    return this._db;
+  },
+  async tx(mode, fn) {
+    const d = await this.open();
+    return new Promise((res, rej) => {
+      const t = d.transaction('scores', mode);
+      const req = fn(t.objectStore('scores'));
+      t.oncomplete = () => res(req ? req.result : undefined);
+      t.onerror = t.onabort = () => rej(t.error || new Error('Transaction annulée'));
+    });
+  },
+  has(id) { return this.meta.has(id); },
+  get(id) { return this.tx('readonly', (s) => s.get(id)); },
+  async put(id, rec) { await this.tx('readwrite', (s) => s.put(rec, id)); this.meta.set(id, { name: rec.name, size: rec.size }); },
+  async del(id) { await this.tx('readwrite', (s) => s.delete(id)); this.meta.delete(id); },
+  async clear() { await this.tx('readwrite', (s) => s.clear()); this.meta.clear(); },
+  async refresh() {
+    try {
+      const d = await this.open();
+      const m = new Map();
+      await new Promise((res, rej) => {
+        const req = d.transaction('scores', 'readonly').objectStore('scores').openCursor();
+        req.onsuccess = () => { const c = req.result; if (!c) return res(); m.set(c.key, { name: c.value.name, size: c.value.size }); c.continue(); };
+        req.onerror = () => rej(req.error);
+      });
+      this.meta = m;
+    } catch (e) { /* stockage indisponible : l'appli reste utilisable sans partitions */ }
+  },
+};
+const fmtSize = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(b / 1024)) + ' Ko');
+const isPdfBuffer = (buf) => { const u = new Uint8Array(buf.slice(0, 1024)); const h = String.fromCharCode(...u); return h.includes('%PDF-'); };
+function bufToBase64(buf) {
+  const u = new Uint8Array(buf); let bin = '';
+  for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function base64ToBuf(b64) { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+
+let scoreTarget = null;
+function pickScore(titleId) { scoreTarget = titleId; $('#scoreFile').click(); }
+$('#scoreFile').addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  const id = scoreTarget; scoreTarget = null;
+  if (!f || !getTitle(id)) return;
+  try {
+    if (f.size > SCORE_MAX_BYTES) { showToast({ tone: 'r', icon: 'warn', title: 'Fichier trop lourd', sub: `Maximum ${fmtSize(SCORE_MAX_BYTES)}.` }); return; }
+    const data = await f.arrayBuffer();
+    if (!isPdfBuffer(data)) { showToast({ tone: 'r', icon: 'warn', title: 'Ce n’est pas un PDF', sub: 'Choisis un fichier .pdf.' }); return; }
+    await ScoreStore.put(id, { name: f.name, size: f.size, data, addedAt: new Date().toISOString() });
+    renderCurrent();
+    showToast({ tone: 'x', icon: 'check', title: 'Partition ajoutée', sub: `${getTitle(id).name} · ${fmtSize(f.size)}` });
+  } catch (err) {
+    showToast({ tone: 'r', icon: 'warn', title: 'Ajout impossible', sub: 'Le stockage du téléphone a refusé le fichier.' });
+  }
+});
+async function removeScore(id) {
+  const t = getTitle(id); if (!t || !ScoreStore.has(id)) return;
+  const ok = await confirmSheet({ title: `Supprimer la partition de « ${t.name} » ?`, message: 'Le PDF sera retiré de l’appli. Ton fichier d’origine n’est pas touché.', confirmLabel: 'Supprimer', icon: 'trash' });
+  if (!ok) return;
+  try { await ScoreStore.del(id); } catch (e) {}
+  renderCurrent();
+}
+
+/* Visionneuse : PDF.js embarqué (dossier vendor/), rendu sur canvas, zoom au pincement */
+let pdfLib = null;
+async function loadPdfLib() {
+  if (!pdfLib) {
+    pdfLib = await import('./vendor/pdf.min.mjs');
+    pdfLib.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.mjs', location.href).href;
+  }
+  return pdfLib;
+}
+async function openScore(id) {
+  const t = getTitle(id); if (!t) return;
+  const ov = document.createElement('div');
+  ov.className = 'viewer';
+  ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Partition de ' + t.name);
+  ov.innerHTML = `<div class="v-bar">
+      <span class="v-title">${esc(t.name)}</span>
+      <button class="navbtn" data-v="out" aria-label="Dézoomer">${ic('minus')}</button>
+      <button class="navbtn" data-v="in" aria-label="Zoomer">${ic('plus')}</button>
+      <button class="lnk" data-v="close" style="font-weight:700">Fermer</button>
+    </div>
+    <div class="v-scroll" id="vScroll"><div class="v-pages" id="vPages"><p class="v-msg">Chargement de la partition…</p></div></div>`;
+  document.body.appendChild(ov);
+  document.body.classList.add('viewer-open');
+  requestAnimationFrame(() => ov.classList.add('show'));
+  const sc = $('#vScroll', ov), pages = $('#vPages', ov);
+  let z = 1, wake = null, closed = false, pdf = null;
+  const close = () => {
+    if (closed) return; closed = true;
+    try { if (wake) wake.release(); } catch (e) {}
+    try { if (pdf) pdf.destroy(); } catch (e) {}
+    document.body.classList.remove('viewer-open');
+    ov.classList.remove('show'); setTimeout(() => ov.remove(), 220);
+    document.removeEventListener('visibilitychange', onVis);
+  };
+  const onVis = async () => { if (!document.hidden && !closed && 'wakeLock' in navigator) { try { wake = await navigator.wakeLock.request('screen'); } catch (e) {} } };
+  document.addEventListener('visibilitychange', onVis);
+  try { if ('wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); } catch (e) { wake = null; }
+
+  const setZoom = (nz, cx, cy) => {
+    nz = Math.min(4, Math.max(1, nz));
+    if (cx === undefined) { cx = sc.clientWidth / 2; cy = sc.clientHeight / 2; }
+    const fx = (sc.scrollLeft + cx) / sc.scrollWidth, fy = (sc.scrollTop + cy) / sc.scrollHeight;
+    z = nz; pages.style.setProperty('--z', z);
+    sc.scrollLeft = fx * sc.scrollWidth - cx; sc.scrollTop = fy * sc.scrollHeight - cy;
+  };
+  ov.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-v]'); if (!b) return;
+    if (b.dataset.v === 'close') close();
+    else setZoom(z * (b.dataset.v === 'in' ? 1.4 : 1 / 1.4));
+  });
+  // Pincement et double-tap
+  let pinch = null, lastTap = 0;
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  sc.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) pinch = { d: dist(e.touches), z };
+    else if (e.touches.length === 1) {
+      const now = Date.now();
+      if (now - lastTap < 300) { const r = sc.getBoundingClientRect(); setZoom(z > 1.2 ? 1 : 2.5, e.touches[0].clientX - r.left, e.touches[0].clientY - r.top); lastTap = 0; }
+      else lastTap = now;
+    }
+  }, { passive: true });
+  sc.addEventListener('touchmove', (e) => {
+    if (pinch && e.touches.length === 2) {
+      e.preventDefault();
+      const r = sc.getBoundingClientRect();
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left, cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+      setZoom(pinch.z * dist(e.touches) / pinch.d, cx, cy);
+    }
+  }, { passive: false });
+  sc.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinch = null; }, { passive: true });
+
+  try {
+    const rec = await ScoreStore.get(id);
+    if (!rec) throw new Error('absent');
+    const lib = await loadPdfLib();
+    pdf = await lib.getDocument({ data: new Uint8Array(rec.data.slice(0)) }).promise;
+    if (closed) return;
+    pages.innerHTML = '';
+    const baseW = Math.max(window.innerWidth, window.innerHeight);
+    const dpr = Math.min(window.devicePixelRatio || 2, 3);
+    for (let n = 1; n <= Math.min(pdf.numPages, 12); n++) {
+      const page = await pdf.getPage(n);
+      if (closed) return;
+      const vp1 = page.getViewport({ scale: 1 });
+      let scale = (baseW - 24) / vp1.width * dpr * 2;                       // netteté jusqu'à ×2 de zoom
+      const maxPx = 12e6;                                                   // limite mémoire des canvas iOS
+      if (vp1.width * vp1.height * scale * scale > maxPx) scale = Math.sqrt(maxPx / (vp1.width * vp1.height));
+      const vp = page.getViewport({ scale });
+      const cv = document.createElement('canvas');
+      cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+      cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', `Partition de ${t.name}, page ${n}`);
+      pages.appendChild(cv);
+      await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    }
+  } catch (err) {
+    if (!closed) pages.innerHTML = `<p class="v-msg">Impossible d’afficher cette partition.<br>Essaie de la supprimer puis de la rajouter.</p>`;
+  }
+}
 
 /* =========================================================
    Barre d'onglets & navigation
@@ -696,6 +889,7 @@ function renderPlay() {
         <h1 class="song-title">${esc(t.name)}</h1>
         <div class="song-meta"><span class="num tempo">♩ = ${t.tempo}</span><span class="dot-sep"></span>${lastLine}</div>
       </div>
+      ${ScoreStore.has(t.id) ? `<div style="padding:0 4px"><button class="btn2" data-action="score-open" data-id="${t.id}">${ic('doc')}Ouvrir la partition</button></div>` : ''}
       ${todos.length ? `<section class="todo-sec"><h2 class="sec">À faire sur ce morceau</h2>
         ${todos.map((c) => `<div class="todo-row${c.done ? ' is-done' : ''}" data-cid="${c.id}">
           <button class="chk" data-action="comment-toggle" data-id="${c.id}" aria-label="${c.done ? 'Marquer comme à faire' : 'Marquer comme fait'}"><span>${ic('check')}</span></button>
@@ -994,7 +1188,7 @@ function renderLibList() {
   if (!db.titles.length) { el.innerHTML = `<p class="list-empty">Aucun morceau pour l’instant.<br>Touche <b>+</b> pour ajouter ton premier titre.</p>`; return; }
   if (!list.length) { el.innerHTML = `<p class="list-empty">Aucun résultat pour « ${esc(ui.lib.search.trim())} ».</p>`; return; }
   el.innerHTML = list.map((t) => `<button class="srow" data-action="open-fiche" data-id="${t.id}">
-      <span class="srow-main"><span class="srow-name">${esc(t.name)}</span><span class="num srow-sub">♩ = ${t.tempo}</span></span>
+      <span class="srow-main"><span class="srow-name">${esc(t.name)}</span><span class="num srow-sub">♩ = ${t.tempo}${ScoreStore.has(t.id) ? ic('doc') : ''}</span></span>
       ${pill(idx.get(t.id).last)}${ic('chevR', 'chev')}
     </button>`).join('');
 }
@@ -1022,6 +1216,15 @@ function renderFiche() {
       </div>
       <p class="f-last">${st.lastDate ? 'Dernière séance ' + relDay(st.lastDate, true) : 'Jamais joué'}</p>
       <button class="btn" data-action="play-title" data-id="${t.id}" style="height:56px">${icf('play', '', 'width:22px;height:22px')}Jouer ce titre</button>
+      ${(() => { const m = ScoreStore.meta.get(t.id); return `<section class="fsec">
+        <div class="fsec-h"><h2 class="sec">Partition</h2>${m ? '<span>PDF</span>' : ''}</div>
+        <div class="card">${m ? `
+          <button class="arow" data-action="score-open" data-id="${t.id}">${ic('doc', '', 'color:var(--acc-tx)')}<span class="score-meta"><b>${esc(m.name)}</b><small>${fmtSize(m.size)}</small></span>${ic('chevR', 'chev')}</button>
+          <button class="arow sep accent" data-action="score-add" data-id="${t.id}">${ic('import', '', 'width:22px;height:22px')}Remplacer le PDF</button>
+          <button class="arow sep danger" data-action="score-delete" data-id="${t.id}" style="justify-content:flex-start">${ic('trash')}Supprimer la partition</button>`
+          : `<button class="arow accent" data-action="score-add" data-id="${t.id}" style="padding-left:14px">${ic('plus', '', 'width:22px;height:22px;stroke-width:2.2')}Ajouter la partition (PDF)</button>`}
+        </div>
+      </section>`; })()}
       ${st.count ? `<section class="fsec" style="margin-top:8px">
         <div class="fsec-h"><h2 class="sec">Évolution</h2><span>${plural(st.count, 'séance', 'séances')}</span></div>
         <div class="card" style="padding:16px 16px 12px">${evolutionChart(t, st.sessions)}</div>
@@ -1132,6 +1335,7 @@ async function deleteTitle(id) {
   db.comments = db.comments.filter((c) => c.titleId !== id);
   if (db.meta.lastDrawnTitleId === id) db.meta.lastDrawnTitleId = null;
   if (ui.play.titleId === id) ui.play = { state: 'idle' };
+  try { await ScoreStore.del(id); } catch (e) {}
   save();
   ui.lib.view = 'list'; ui.lib.ficheId = null;
   renderLibrary();
@@ -1143,7 +1347,12 @@ async function exportData() {
   const d = new Date();
   const p2 = (n) => String(n).padStart(2, '0');
   const fname = `saxtrainer-${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}.json`;
-  const json = JSON.stringify(db, null, 2);
+  const files = [];
+  for (const [tid, m] of ScoreStore.meta) {
+    if (!getTitle(tid)) continue;
+    try { const r = await ScoreStore.get(tid); if (r) files.push({ titleId: tid, name: m.name, data: bufToBase64(r.data) }); } catch (e) {}
+  }
+  const json = JSON.stringify(files.length ? Object.assign({}, db, { files }) : db, null, 2);
   const markDone = () => { db.meta.lastExportAt = new Date().toISOString(); save(); if (ui.tab === 'library') renderLibrary(); };
   let file = null;
   try { file = new File([json], fname, { type: 'application/json' }); } catch (e) {}
@@ -1169,18 +1378,27 @@ async function exportData() {
   showToast({ tone: 'x', icon: 'check', title: 'Export terminé', sub: fname });
 }
 async function importFile(file) {
-  let data = null;
-  try { data = normalizeDb(JSON.parse(await file.text())); } catch (e) { data = null; }
+  let data = null, rawFiles = [];
+  try { const raw = JSON.parse(await file.text()); data = normalizeDb(raw); if (data && Array.isArray(raw.files)) rawFiles = raw.files; } catch (e) { data = null; }
   if (!data) { showToast({ tone: 'r', icon: 'warn', title: 'Fichier invalide', sub: 'Ce n’est pas une sauvegarde Sax Trainer.' }); return; }
   const ok = await confirmSheet({
     title: 'Remplacer toutes les données actuelles ?',
-    message: `Le fichier contient ${plural(data.titles.length, 'morceau', 'morceaux')}, ${plural(data.sessions.length, 'séance', 'séances')} et ${plural(data.comments.length, 'commentaire', 'commentaires')}. Les données actuelles seront effacées.`,
+    message: `Le fichier contient ${plural(data.titles.length, 'morceau', 'morceaux')}, ${plural(data.sessions.length, 'séance', 'séances')} et ${plural(data.comments.length, 'commentaire', 'commentaires')}${rawFiles.length ? `, plus ${plural(rawFiles.length, 'partition', 'partitions')}` : ''}. Les données actuelles seront effacées.`,
     confirmLabel: 'Remplacer', icon: 'import',
   });
   if (!ok) return;
   db = data;
   save();
   applyTheme();
+  try {
+    await ScoreStore.clear();
+    const ids = new Set(db.titles.map((x) => x.id));
+    for (const f of rawFiles) {
+      if (!f || !ids.has(f.titleId) || typeof f.data !== 'string') continue;
+      const buf = base64ToBuf(f.data);
+      if (isPdfBuffer(buf)) await ScoreStore.put(f.titleId, { name: String(f.name || 'partition.pdf'), size: buf.byteLength, data: buf, addedAt: new Date().toISOString() });
+    }
+  } catch (e) { showToast({ tone: 'o', icon: 'warn', title: 'Partitions non restaurées', sub: 'Le stockage du téléphone a refusé les fichiers.' }); }
   ui.play = { state: 'idle' }; ui.lib = { view: 'list', ficheId: null, search: '', histAll: false };
   renderCurrent();
   showToast({ tone: 'x', icon: 'check', title: 'Données importées', sub: plural(db.titles.length, 'morceau', 'morceaux') });
@@ -1346,6 +1564,9 @@ const actions = {
     $('#validateBtn').disabled = false;
   },
   validate: () => validatePlay(),
+  'score-open': (el) => openScore(el.dataset.id),
+  'score-add': (el) => pickScore(el.dataset.id),
+  'score-delete': (el) => removeScore(el.dataset.id),
   'comment-toggle': (el) => toggleComment(el.dataset.id),
   'comment-edit': (el) => openCommentSheet({ commentId: el.dataset.id }),
   'comment-delete': (el) => deleteComment(el.dataset.id),
@@ -1440,12 +1661,13 @@ document.addEventListener('focusout', () => setTimeout(() => { if (!document.act
    ========================================================= */
 renderTabbar();
 showTab('play');
+ScoreStore.refresh().then(() => { if (ui.play.state !== 'drawing' && !document.querySelector('.ov')) renderCurrent(); });
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 // Accès console pour tester ou régler l'algorithme
-window.SaxTrainer = { CONFIG, computeWeights, pickWeighted, get db() { return db; } };
+window.SaxTrainer = { CONFIG, computeWeights, pickWeighted, ScoreStore, get db() { return db; } };
 </script>
 </body>
 </html>
