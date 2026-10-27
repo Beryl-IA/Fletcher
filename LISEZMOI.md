@@ -34,5 +34,7 @@
 
 - **Tes données restent sur le téléphone**, liées à l'appli installée. Si tu la supprimes de l'écran d'accueil, elles sont effacées. Fais un **export** de temps en temps (Bibliothèque → Données → Exporter → « Enregistrer dans Fichiers » / iCloud). L'appli te le rappelle après 30 jours sans export.
 - **Mettre à jour l'appli** : modifie les fichiers, change `VERSION` dans `sw.js` (ex. `'v2'`), puis redépose le dossier. Ferme et relance l'appli deux fois pour voir la nouvelle version.
-- **Régler le tirage** : les constantes (15, 11, 0,5, 30) sont dans l'objet `CONFIG` en haut du script de `index.html`. La fonction `computeWeights` se teste dans la console : `SaxTrainer.computeWeights(...)`.
+- **Titres à chercher** : Bibliothèque → volet « À chercher ». Note les morceaux que tu veux jouer (avec une note libre : artiste, lien…). Quand tu as la partition, « Trouvée » le transforme en morceau et ouvre sa fiche pour joindre le PDF. Cette liste est incluse dans l'export.
+- **Suivi par semaine** : dans Stats, sous le suivi par jour, les 8 dernières semaines (lundi → dimanche), la semaine en cours, la précédente et le nombre de jours joués.
+- **Régler le tirage** : les constantes sont dans l'objet `CONFIG` en haut du script de `index.html` : jamais joué = 200 ; notes 0 à 9 = (11 − note)² (exposant `WEIGHT_EXPONENT`) ; 10/10 = 2 ; bonus d'ancienneté ×1 → ×2 sur 30 jours. La fonction `computeWeights` se teste dans la console : `SaxTrainer.computeWeights(...)`.
 - **Modifier l'icône** : remplace `icon-source.png` (carré, 1024 px) puis régénère `icon-180.png`, `icon-192.png` et `icon-512.png`. Sur iPhone, il faut supprimer l'appli de l'écran d'accueil et la rajouter pour voir la nouvelle icône (fais un export avant).

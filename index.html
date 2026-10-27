@@ -261,6 +261,13 @@ body.typing .dock{display:none}
 .data-note{padding:0 6px;font-size:14px;line-height:19px;color:var(--tx3)}
 .data-warn{padding:0 6px;display:flex;align-items:center;gap:6px;font-size:14px;line-height:19px;font-weight:600;color:var(--o-fg)}
 .data-warn .ic{width:17px;height:17px;stroke-width:2}
+/* Titres à chercher */
+.crow.wish{align-items:center;gap:10px;padding:4px 12px 4px 16px}
+.crow.wish .ctext{padding:10px 0}
+.wish-name{font-size:17px;line-height:22px;font-weight:600;overflow-wrap:anywhere}
+.wish-note{font-size:14px;line-height:19px;color:var(--tx2);white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wadd{flex:none;display:inline-flex;align-items:center;gap:5px;height:40px;padding:0 14px 0 10px;border:0;border-radius:20px;background:var(--acc-soft);color:var(--acc-tx);font-size:14px;font-weight:700}
+.wadd .ic{width:17px;height:17px;stroke-width:2.8}
 
 /* Fiche */
 .fnav{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 4px}
@@ -308,6 +315,13 @@ body.typing .dock{display:none}
 .bar7.zero{background:var(--surf3)}
 .week-l{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-top:-6px}
 .week-l span{text-align:center;font-size:12px;font-weight:600;color:var(--tx3)}
+.weeks{display:grid;grid-template-columns:repeat(var(--nw,8),minmax(0,1fr));gap:8px;align-items:end;height:66px}
+.wk{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%}
+.wk-n{font-size:12px;line-height:14px;font-weight:700;color:var(--tx3)}
+.wk.cur .wk-n{color:var(--acc-tx)}
+.weeks-l{display:grid;grid-template-columns:repeat(var(--nw,8),minmax(0,1fr));gap:8px;margin-top:-6px}
+.weeks-l span{text-align:center;font-size:11px;font-weight:600;color:var(--tx3);white-space:nowrap}
+.weeks-l span.cur{color:var(--acc-tx);font-weight:800}
 .strow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:8px 14px 8px 16px;border:0;background:transparent;color:var(--tx);text-align:left}
 .strow + .strow{border-top:1px solid var(--sep)}
 .spk{fill:none;stroke:var(--tx3);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
@@ -397,10 +411,13 @@ body.viewer-open .landscape{display:none!important}
    Réglages — constantes de l'algorithme et de l'appli
    ========================================================= */
 const CONFIG = {
-  WEIGHT_NEVER_PLAYED: 15,   // titre jamais joué
-  WEIGHT_BASE_MAX: 11,       // poids = 11 − note (notes 0 à 9)
-  WEIGHT_PERFECT: 0.5,       // titre à 10
+  WEIGHT_NEVER_PLAYED: 200,  // titre jamais joué : prioritaire
+  WEIGHT_BASE_MAX: 11,       // poids = (11 − note) ^ WEIGHT_EXPONENT (notes 0 à 9)
+  WEIGHT_EXPONENT: 2,        // 2 → note 0 : 121 · 3 : 64 · 5 : 36 · 7 : 16 · 9 : 4. Plus il est grand, plus les notes faibles dominent
+  WEIGHT_PERFECT: 2,         // titre à 10 : sort encore de temps en temps, pour l'entretien
   AGE_DAYS_CAP: 30,          // bonus d'ancienneté : ×1 → ×2 sur 30 jours
+  WISH_NOTE_MAX: 500,        // note libre d'un titre à chercher
+  WEEKS_SHOWN: 8,            // semaines affichées dans Stats
   TEMPO_MIN: 30,
   TEMPO_MAX: 250,
   TEMPO_DEFAULT: 100,
@@ -443,7 +460,7 @@ function computeWeights(titles, sessions, lastDrawnId, now) {
     if (!l) {
       base = CONFIG.WEIGHT_NEVER_PLAYED;
     } else {
-      base = l.note >= 10 ? CONFIG.WEIGHT_PERFECT : CONFIG.WEIGHT_BASE_MAX - l.note;
+      base = l.note >= 10 ? CONFIG.WEIGHT_PERFECT : Math.pow(CONFIG.WEIGHT_BASE_MAX - l.note, CONFIG.WEIGHT_EXPONENT);
       days = Math.max(0, (nowMs - l.t) / DAY_MS);
       factor = 1 + Math.min(days, CONFIG.AGE_DAYS_CAP) / CONFIG.AGE_DAYS_CAP;
     }
@@ -466,7 +483,7 @@ function pickWeighted(weights, rnd = Math.random) {
    Données (localStorage)
    ========================================================= */
 function emptyDb() {
-  return { schemaVersion: SCHEMA_VERSION, titles: [], sessions: [], comments: [], meta: { lastDrawnTitleId: null, lastExportAt: null, theme: 'auto' } };
+  return { schemaVersion: SCHEMA_VERSION, titles: [], sessions: [], comments: [], wishes: [], meta:{ lastDrawnTitleId: null, lastExportAt: null, theme: 'auto' } };
 }
 const uuid = () => (crypto && crypto.randomUUID) ? crypto.randomUUID()
   : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
@@ -495,6 +512,15 @@ function normalizeDb(d) {
   for (const c of (Array.isArray(d.comments) ? d.comments : [])) {
     if (!c || !ids.has(c.titleId) || typeof c.text !== 'string' || !c.text.trim()) continue;
     out.comments.push({ id: typeof c.id === 'string' ? c.id : uuid(), titleId: c.titleId, text: c.text, createdAt: validIso(c.createdAt) ? c.createdAt : new Date().toISOString(), done: !!c.done, doneAt: c.done && validIso(c.doneAt) ? c.doneAt : null });
+  }
+  const wids = new Set();
+  for (const w of (Array.isArray(d.wishes) ? d.wishes : [])) {
+    if (!w || typeof w.name !== 'string') continue;
+    const name = w.name.trim().slice(0, CONFIG.NAME_MAX);
+    if (!name) continue;
+    const id = typeof w.id === 'string' && !wids.has(w.id) ? w.id : uuid();
+    wids.add(id);
+    out.wishes.push({ id, name, note: typeof w.note === 'string' ? w.note.trim().slice(0, CONFIG.WISH_NOTE_MAX) : '', createdAt: validIso(w.createdAt) ? w.createdAt : new Date().toISOString() });
   }
   const m = d.meta && typeof d.meta === 'object' ? d.meta : {};
   out.meta = Object.assign({}, m, {
@@ -623,7 +649,7 @@ const ui = {
   tab: 'play',
   play: { state: 'idle' },          // idle | drawing | active
   commentsFilter: 'todo',           // todo | done | all
-  lib: { view: 'list', ficheId: null, search: '', histAll: false },
+  lib: { view: 'list', ficheId: null, search: '', histAll: false, pane: 'titles' },   // pane : titles | wishes
   statsSort: 'note',                // note | name
 };
 
@@ -868,7 +894,7 @@ function renderPlay() {
       <div class="idle-center">
         <button class="draw" data-action="draw">${ic('shuffle')}<span>Tirer un morceau</span></button>
         <div class="idle-foot">
-          <p class="hint">Les titres les moins bien notés sortent plus souvent.</p>
+          <p class="hint">Les titres jamais joués et les moins bien notés sortent bien plus souvent.</p>
           ${todo ? `<button class="btn2" data-action="goto-todo">${ic('comment')}<span>${plural(todo, 'commentaire', 'commentaires')} à faire</span></button>` : ''}
         </div>
       </div>`;
@@ -1145,15 +1171,22 @@ function renderLibrary() {
   if (ui.lib.view === 'fiche' && getTitle(ui.lib.ficheId)) return renderFiche();
   ui.lib.view = 'list'; ui.lib.ficheId = null;
   const v = $('#view-library');
+  const wishes = ui.lib.pane === 'wishes';
+  const nW = db.wishes.length;
+  const pane = (k, l) => `<button data-action="lib-pane" data-p="${k}" aria-pressed="${ui.lib.pane === k}">${l}</button>`;
   v.innerHTML = `<div class="page">
     <div class="navrow">
       <button class="navbtn" data-action="lib-data" aria-label="Réglages et sauvegarde">${ic('sliders')}</button>
-      <button class="navbtn" data-action="title-new" aria-label="Ajouter un morceau">${ic('plus')}</button>
+      <button class="navbtn" data-action="${wishes ? 'wish-new' : 'title-new'}" aria-label="${wishes ? 'Noter un titre à chercher' : 'Ajouter un morceau'}">${ic('plus')}</button>
     </div>
     <h1 class="lt">Bibliothèque</h1>
-    <div class="pad" style="padding-top:10px"><label class="search">${ic('search')}<input type="search" id="libSearch" placeholder="Rechercher" aria-label="Rechercher un morceau" value="${esc(ui.lib.search)}" autocomplete="off"></label></div>
+    <div class="pad"><div class="seg" role="group" aria-label="Volet">${pane('titles', 'Mes morceaux')}${pane('wishes', 'À chercher' + (nW ? ` (${nW})` : ''))}</div></div>
+    <div class="pad" style="padding-top:10px"><label class="search">${ic('search')}<input type="search" id="libSearch" placeholder="Rechercher" aria-label="${wishes ? 'Rechercher un titre à chercher' : 'Rechercher un morceau'}" value="${esc(ui.lib.search)}" autocomplete="off"></label></div>
     <div class="lib-body">
-      <div class="card" id="libList"></div>
+      <div class="fsec" style="gap:8px">
+        <div class="card" id="libList"></div>
+        ${wishes && nW ? `<p class="data-note">Partition trouvée ? Touche <b>Trouvée</b> pour l’ajouter à tes morceaux, puis joins le PDF. Balaye vers la gauche pour retirer un titre.</p>` : ''}
+      </div>
       <section id="reglages" class="fsec">
         <h2 class="sec" style="padding:0 6px">Apparence</h2>
         <div class="seg" role="group" aria-label="Thème">${Object.entries(THEMES).map(([k, l]) => `<button data-action="set-theme" data-theme="${k}" aria-pressed="${db.meta.theme === k}">${l}</button>`).join('')}</div>
@@ -1180,17 +1213,111 @@ function exportStatus() {
   if (d > CONFIG.EXPORT_REMINDER_DAYS) return `<p class="data-warn">${ic('warn')}Dernier export il y a ${d} jours. Pense à sauvegarder.</p>`;
   return `<p class="data-note">Dernier export : ${relDay(last, true)}</p>`;
 }
+const fold = (s) => s.toLocaleLowerCase('fr').normalize('NFD').replace(/[̀-ͯ]/g, '');
 function renderLibList() {
   const el = $('#libList'); if (!el) return;
+  const q = fold(ui.lib.search.trim());
+  if (ui.lib.pane === 'wishes') {
+    const list = db.wishes.slice().sort(byNewest).filter((w) => !q || fold(w.name).includes(q) || fold(w.note).includes(q));
+    if (!db.wishes.length) { el.innerHTML = `<p class="list-empty">Aucun titre à chercher.<br>Touche <b>+</b> pour noter un morceau dont tu veux trouver la partition.</p>`; return; }
+    if (!list.length) { el.innerHTML = `<p class="list-empty">Aucun résultat pour « ${esc(ui.lib.search.trim())} ».</p>`; return; }
+    el.innerHTML = list.map(wishRow).join('');
+    return;
+  }
   const idx = indexStats();
-  const q = ui.lib.search.trim().toLocaleLowerCase('fr').normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const list = db.titles.slice().sort(sortByName).filter((t) => !q || t.name.toLocaleLowerCase('fr').normalize('NFD').replace(/[̀-ͯ]/g, '').includes(q));
+  const list = db.titles.slice().sort(sortByName).filter((t) => !q || fold(t.name).includes(q));
   if (!db.titles.length) { el.innerHTML = `<p class="list-empty">Aucun morceau pour l’instant.<br>Touche <b>+</b> pour ajouter ton premier titre.</p>`; return; }
   if (!list.length) { el.innerHTML = `<p class="list-empty">Aucun résultat pour « ${esc(ui.lib.search.trim())} ».</p>`; return; }
   el.innerHTML = list.map((t) => `<button class="srow" data-action="open-fiche" data-id="${t.id}">
       <span class="srow-main"><span class="srow-name">${esc(t.name)}</span><span class="num srow-sub">♩ = ${t.tempo}${ScoreStore.has(t.id) ? ic('doc') : ''}</span></span>
       ${pill(idx.get(t.id).last)}${ic('chevR', 'chev')}
     </button>`).join('');
+}
+
+/* Titres à chercher : morceaux à jouer dont il faut trouver la partition */
+function wishRow(w) {
+  return `<div class="rwrap swipeable" data-wid="${w.id}">
+    <button class="swdel" data-action="wish-delete" data-id="${w.id}" aria-label="Retirer « ${esc(w.name)} » de la liste">${ic('trash')}<span>Retirer</span></button>
+    <div class="crow wish">
+      <button class="ctext" data-action="wish-edit" data-id="${w.id}" aria-label="Modifier « ${esc(w.name)} »">
+        <span class="wish-name">${esc(w.name)}</span>
+        ${w.note ? `<span class="wish-note">${esc(w.note)}</span>` : ''}
+        <span class="ctext-meta">Ajouté ${relDay(w.createdAt)}</span>
+      </button>
+      <button class="wadd" data-action="wish-to-title" data-id="${w.id}" aria-label="Partition trouvée : ajouter « ${esc(w.name)} » à mes morceaux">${ic('check')}Trouvée</button>
+    </div>
+  </div>`;
+}
+const sameName = (a, b) => a.trim().toLocaleLowerCase('fr') === b.trim().toLocaleLowerCase('fr');
+function openWishSheet(id = null) {
+  const w = id ? db.wishes.find((x) => x.id === id) : null;
+  if (id && !w) return;
+  openSheet({
+    title: w ? 'Titre à chercher' : 'Nouveau titre à chercher',
+    body: `<label class="fld"><span class="sec">Titre</span>
+        <input class="inp" id="wName" type="text" maxlength="${CONFIG.NAME_MAX}" placeholder="Ex. Take Five" autocomplete="off" autocapitalize="words" enterkeyhint="done" value="${w ? esc(w.name) : ''}"></label>
+      <p class="warn" id="wDup" hidden></p>
+      <label class="fld"><span class="sec">Note (facultatif)</span>
+        <textarea class="field tall" id="wNote" maxlength="${CONFIG.WISH_NOTE_MAX}" placeholder="Artiste, version, lien, qui pourrait avoir la partition…">${w ? esc(w.note) : ''}</textarea></label>
+      ${w ? `<div class="card"><button class="arow accent" data-sheet="to-title" style="padding-left:14px">${ic('check', '', 'width:22px;height:22px;stroke-width:2.4')}Partition trouvée : ajouter à mes morceaux</button></div>
+      <div class="card sheet-danger"><button class="arow danger" data-sheet="delete">${ic('trash')}Retirer de la liste</button></div>` : ''}`,
+    canSave: (root) => $('#wName', root).value.trim().length > 0,
+    onMount: (root) => {
+      const name = $('#wName', root), dup = $('#wDup', root);
+      const check = () => {
+        const v = name.value.trim();
+        const inLib = v && db.titles.some((t) => sameName(t.name, v));
+        const inList = v && db.wishes.some((x) => x.id !== id && sameName(x.name, v));
+        dup.hidden = !inLib && !inList;
+        dup.innerHTML = `${ic('warn')}${inLib ? 'Ce morceau est déjà dans ta bibliothèque.' : 'Ce titre est déjà dans ta liste.'}`;
+      };
+      name.addEventListener('input', check); check();
+      name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); name.blur(); } });
+      if (!w) setTimeout(() => name.focus(), 350);
+    },
+    onSave: (root) => {
+      const name = $('#wName', root).value.trim().slice(0, CONFIG.NAME_MAX);
+      const note = $('#wNote', root).value.trim().slice(0, CONFIG.WISH_NOTE_MAX);
+      if (!name) return false;
+      if (w) { w.name = name; w.note = note; }
+      else db.wishes.push({ id: uuid(), name, note, createdAt: new Date().toISOString() });
+      save(); renderCurrent();
+      if (!w) showToast({ tone: 'x', icon: 'check', title: 'Titre noté', sub: `${name} · à chercher` });
+      return true;
+    },
+    onAction: async (act, close) => {
+      if (!w) return;
+      if (act === 'delete') { const ok = await deleteWish(w.id); if (ok) close(); }
+      else if (act === 'to-title') {
+        const n = $('#wName').value.trim();
+        if (n) w.name = n.slice(0, CONFIG.NAME_MAX);
+        w.note = $('#wNote').value.trim().slice(0, CONFIG.WISH_NOTE_MAX);
+        save(); close();
+        wishToTitle(w.id);
+      }
+    },
+  });
+}
+function wishToTitle(id) {
+  const w = db.wishes.find((x) => x.id === id); if (!w) return;
+  openTitleSheet(null, {
+    name: w.name,
+    title: 'Ajouter à mes morceaux',
+    onCreated: (t) => {
+      db.wishes = db.wishes.filter((x) => x.id !== id);
+      ui.lib.view = 'fiche'; ui.lib.ficheId = t.id; ui.lib.histAll = false;
+      setTimeout(() => { if (ui.tab === 'library') $('#view-library').scrollTop = 0; }, 0);
+    },
+  });
+}
+async function deleteWish(id) {
+  const w = db.wishes.find((x) => x.id === id); if (!w) return false;
+  const ok = await confirmSheet({ title: `Retirer « ${w.name} » de la liste ?`, message: 'Le titre ne sera plus dans tes titres à chercher.', confirmLabel: 'Retirer', icon: 'trash' });
+  if (!ok) { closeSwipes(); return false; }
+  db.wishes = db.wishes.filter((x) => x.id !== id);
+  save();
+  renderCurrent();
+  return true;
 }
 
 function renderFiche() {
@@ -1270,12 +1397,12 @@ function evolutionChart(t, sessions) {
   </svg>`;
 }
 
-function openTitleSheet(id = null) {
+function openTitleSheet(id = null, opts = {}) {
   const t = id ? getTitle(id) : null;
   openSheet({
-    title: t ? 'Modifier le morceau' : 'Nouveau morceau',
+    title: t ? 'Modifier le morceau' : (opts.title || 'Nouveau morceau'),
     body: `<label class="fld"><span class="sec">Nom du morceau</span>
-        <input class="inp" id="fName" type="text" maxlength="${CONFIG.NAME_MAX}" placeholder="Ex. Autumn Leaves" autocomplete="off" autocapitalize="words" enterkeyhint="done" value="${t ? esc(t.name) : ''}"></label>
+        <input class="inp" id="fName" type="text" maxlength="${CONFIG.NAME_MAX}" placeholder="Ex. Autumn Leaves" autocomplete="off" autocapitalize="words" enterkeyhint="done" value="${t ? esc(t.name) : esc(opts.name || '')}"></label>
       <p class="warn" id="fDup" hidden>${ic('warn')}Un morceau porte déjà ce nom.</p>
       <div class="fld" role="group" aria-label="Tempo"><span class="sec">Tempo</span>
         <div class="tempo-card">
@@ -1299,7 +1426,7 @@ function openTitleSheet(id = null) {
       name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); name.blur(); } });
       tempo.addEventListener('input', () => { const n = Number(tempo.value); echo.textContent = Number.isFinite(n) && tempo.value !== '' ? Math.round(n) : '–'; });
       tempo.addEventListener('blur', () => { const n = Number(tempo.value); tempo.value = Number.isFinite(n) && tempo.value !== '' ? clampTempo(n) : (t ? t.tempo : CONFIG.TEMPO_DEFAULT); echo.textContent = tempo.value; });
-      if (!t) setTimeout(() => name.focus(), 350);
+      if (!t && !opts.name) setTimeout(() => name.focus(), 350);
     },
     onSave: (root) => {
       const name = $('#fName', root).value.trim().slice(0, CONFIG.NAME_MAX);
@@ -1311,7 +1438,9 @@ function openTitleSheet(id = null) {
         save(); renderCurrent();
         showToast({ tone: 'x', icon: 'check', title: 'Morceau modifié', sub: `${name} · ♩ = ${tempo}` });
       } else {
-        db.titles.push({ id: uuid(), name, tempo, createdAt: new Date().toISOString() });
+        const nt = { id: uuid(), name, tempo, createdAt: new Date().toISOString() };
+        db.titles.push(nt);
+        if (opts.onCreated) opts.onCreated(nt);
         save(); renderCurrent();
         showToast({ tone: 'x', icon: 'check', title: 'Morceau ajouté', sub: `${name} · ♩ = ${tempo}` });
       }
@@ -1383,7 +1512,7 @@ async function importFile(file) {
   if (!data) { showToast({ tone: 'r', icon: 'warn', title: 'Fichier invalide', sub: 'Ce n’est pas une sauvegarde Sax Trainer.' }); return; }
   const ok = await confirmSheet({
     title: 'Remplacer toutes les données actuelles ?',
-    message: `Le fichier contient ${plural(data.titles.length, 'morceau', 'morceaux')}, ${plural(data.sessions.length, 'séance', 'séances')} et ${plural(data.comments.length, 'commentaire', 'commentaires')}${rawFiles.length ? `, plus ${plural(rawFiles.length, 'partition', 'partitions')}` : ''}. Les données actuelles seront effacées.`,
+    message: `Le fichier contient ${plural(data.titles.length, 'morceau', 'morceaux')}, ${plural(data.sessions.length, 'séance', 'séances')} et ${plural(data.comments.length, 'commentaire', 'commentaires')}${data.wishes.length ? `, ${plural(data.wishes.length, 'titre à chercher', 'titres à chercher')}` : ''}${rawFiles.length ? `, plus ${plural(rawFiles.length, 'partition', 'partitions')}` : ''}. Les données actuelles seront effacées.`,
     confirmLabel: 'Remplacer', icon: 'import',
   });
   if (!ok) return;
@@ -1399,7 +1528,7 @@ async function importFile(file) {
       if (isPdfBuffer(buf)) await ScoreStore.put(f.titleId, { name: String(f.name || 'partition.pdf'), size: buf.byteLength, data: buf, addedAt: new Date().toISOString() });
     }
   } catch (e) { showToast({ tone: 'o', icon: 'warn', title: 'Partitions non restaurées', sub: 'Le stockage du téléphone a refusé les fichiers.' }); }
-  ui.play = { state: 'idle' }; ui.lib = { view: 'list', ficheId: null, search: '', histAll: false };
+  ui.play = { state: 'idle' }; ui.lib = { view: 'list', ficheId: null, search: '', histAll: false, pane: 'titles' };
   renderCurrent();
   showToast({ tone: 'x', icon: 'check', title: 'Données importées', sub: plural(db.titles.length, 'morceau', 'morceaux') });
 }
@@ -1427,6 +1556,19 @@ function renderStats() {
   for (const s of db.sessions) { const dd = dayDiff(s.date); if (dd >= 0 && dd <= 6) days[6 - dd].c++; }
   const week = days.reduce((a, x) => a + x.c, 0), maxC = Math.max(1, ...days.map((x) => x.c));
   const L = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+  // Semaines (lundi → dimanche), la dernière est la semaine en cours
+  const NW = CONFIG.WEEKS_SHOWN;
+  const monday = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+  const curMon = monday(today);
+  const weeks = [];
+  for (let i = NW - 1; i >= 0; i--) { const d = new Date(curMon); d.setDate(d.getDate() - 7 * i); weeks.push({ d, c: 0, days: new Set() }); }
+  for (const s of db.sessions) {
+    const sd = new Date(s.date);
+    const wd = Math.round((curMon - monday(sd)) / (7 * DAY_MS));
+    if (wd >= 0 && wd < NW) { const w = weeks[NW - 1 - wd]; w.c++; w.days.add(sd.toDateString()); }
+  }
+  const thisW = weeks[NW - 1], prevW = weeks[NW - 2], maxW = Math.max(1, ...weeks.map((w) => w.c));
+  const wLabel = (d) => `${d.getDate()}/${String(d.getMonth() + 1).padStart(2, '0')}`;
   // Liste
   const rows = db.titles.map((t) => ({ t, st: idx.get(t.id) }));
   if (ui.statsSort === 'name') rows.sort((a, b) => sortByName(a.t, b.t));
@@ -1462,6 +1604,20 @@ function renderStats() {
           ${days.map((x) => `<div class="bar7${x.c ? '' : ' zero'}" style="height:${x.c ? Math.max(8, Math.round(x.c / maxC * 48)) : 4}px"></div>`).join('')}
         </div>
         <div class="week-l">${days.map((x) => `<span>${L[x.d.getDay()]}</span>`).join('')}</div>
+      </div>
+      <div class="card kpi" style="gap:14px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:10px"><h2 class="sec">Par semaine</h2>
+            <p class="num kpi-big" style="gap:6px"><b style="font-size:40px;line-height:44px">${thisW.c}</b><span style="font-size:15px;font-weight:600">cette semaine</span></p></div>
+          <div style="text-align:right;display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:13px;font-weight:600;color:var(--tx2)">Semaine dernière</span>
+            <span class="num" style="font-size:28px;line-height:32px;font-weight:800;color:var(--tx2)">${prevW.c}</span></div>
+        </div>
+        <p class="kpi-sub" style="margin-top:-4px">${thisW.days.size ? `Joué ${plural(thisW.days.size, 'jour', 'jours')} sur 7 cette semaine` : 'Pas encore joué cette semaine'}</p>
+        <div class="weeks" style="--nw:${NW}" role="img" aria-label="Séances par semaine sur ${NW} semaines, de la plus ancienne à la semaine en cours : ${weeks.map((w) => w.c).join(', ')}">
+          ${weeks.map((w, i) => `<div class="wk${i === NW - 1 ? ' cur' : ''}"><span class="num wk-n">${w.c || ''}</span><div class="bar7${w.c ? '' : ' zero'}" style="height:${w.c ? Math.max(8, Math.round(w.c / maxW * 48)) : 4}px"></div></div>`).join('')}
+        </div>
+        <div class="weeks-l" style="--nw:${NW}">${weeks.map((w, i) => `<span class="num${i === NW - 1 ? ' cur' : ''}">${wLabel(w.d)}</span>`).join('')}</div>
       </div>
       <section class="fsec" style="gap:10px;margin-top:12px">
         <h2 class="sec" style="padding:0 6px">Par morceau</h2>
@@ -1579,6 +1735,11 @@ const actions = {
   'open-fiche': (el) => { ui.lib.view = 'fiche'; ui.lib.ficheId = el.dataset.id; ui.lib.histAll = false; renderLibrary(); $('#view-library').scrollTop = 0; },
   'open-fiche-from-stats': (el) => { ui.lib.view = 'fiche'; ui.lib.ficheId = el.dataset.id; ui.lib.histAll = false; showTab('library', { keepLib: true, keepScroll: true }); $('#view-library').scrollTop = 0; },
   'lib-back': () => { ui.lib.view = 'list'; ui.lib.ficheId = null; renderLibrary(); },
+  'lib-pane': (el) => { if (ui.lib.pane === el.dataset.p) return; ui.lib.pane = el.dataset.p; ui.lib.search = ''; renderLibrary(); },
+  'wish-new': () => openWishSheet(),
+  'wish-edit': (el) => openWishSheet(el.dataset.id),
+  'wish-delete': (el) => deleteWish(el.dataset.id),
+  'wish-to-title': (el) => wishToTitle(el.dataset.id),
   'hist-toggle': () => { ui.lib.histAll = !ui.lib.histAll; renderFiche(); },
   'play-title': (el) => { const id = el.dataset.id; db.meta.lastDrawnTitleId = id; save(); showTab('play'); startPlaying(id); },
   'lib-data': () => { const s = $('#reglages'); if (s) s.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
